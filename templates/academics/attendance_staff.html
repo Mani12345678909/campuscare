@@ -1,0 +1,124 @@
+{% extends 'base.html' %}
+
+{% block title %}Faculty Attendance Management - CampusCare{% endblock %}
+
+{% block content %}
+<div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
+    <div>
+        <h3 class="fw-bold mb-1"><i class="bi bi-ui-checks text-primary me-2"></i>Class Attendance Operations</h3>
+        <p class="text-muted small mb-0">Record lecture attendance sessions and monitor student compliance watchlist.</p>
+    </div>
+    {% if user.is_faculty or user.is_manager %}
+    <a href="{% url 'academics:attendance_mark' %}" class="btn btn-primary">
+        <i class="bi bi-check2-square me-1"></i> Take / Update Class Attendance
+    </a>
+    {% endif %}
+</div>
+
+<!-- Low Attendance Compliance Watchlist -->
+{% if low_attendance_students %}
+<div class="card mb-4 border-danger shadow-sm">
+    <div class="card-header bg-danger text-white py-3 d-flex justify-content-between align-items-center">
+        <span class="fw-bold"><i class="bi bi-exclamation-octagon-fill me-2"></i>Low Attendance Watchlist (&lt;75% Threshold)</span>
+        <span class="badge bg-white text-danger">{{ low_attendance_students|length }} students</span>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light small">
+                    <tr>
+                        <th>Roll / ID</th>
+                        <th>Student Name</th>
+                        <th>Department</th>
+                        <th>Attended / Total</th>
+                        <th>Percentage</th>
+                        <th>Status Alert</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in low_attendance_students %}
+                    <tr>
+                        <td><code>{{ item.student.identifier_number|default:item.student.username }}</code></td>
+                        <td class="fw-bold text-dark">{{ item.student.get_full_name|default:item.student.username }}</td>
+                        <td class="small">{{ item.student.department|default:"-" }}</td>
+                        <td class="small">{{ item.attended }} / {{ item.total }} sessions</td>
+                        <td>
+                            <div class="d-flex align-items-center gap-2">
+                                <span class="fw-bold text-danger">{{ item.percentage }}%</span>
+                                <div class="progress flex-grow-1" style="height: 6px; width: 60px;">
+                                    <div class="progress-bar bg-danger" style="width: {{ item.percentage }}%;"></div>
+                                </div>
+                            </div>
+                        </td>
+                        <td>
+                            <span class="badge bg-danger">Critical Shortage</span>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Recent Conducted Sessions Table -->
+<div class="card shadow-sm border-0">
+    <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+        <h5 class="fw-bold mb-0"><i class="bi bi-calendar-check text-secondary me-2"></i>Recent Attendance Sessions</h5>
+        <a href="{% url 'notices:export_attendance_csv' %}" class="btn btn-sm btn-outline-secondary">
+            <i class="bi bi-file-earmark-spreadsheet me-1"></i> Export Attendance CSV
+        </a>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light small">
+                    <tr>
+                        <th>Date</th>
+                        <th>Subject & Section</th>
+                        <th>Room</th>
+                        <th>Conducted By</th>
+                        <th>Turnout</th>
+                        <th>Rate</th>
+                        <th class="text-end">Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for session in sessions %}
+                    <tr>
+                        <td class="fw-semibold">{{ session.date|date:"M d, Y" }}</td>
+                        <td>
+                            <span class="badge bg-dark">{{ session.timetable_slot.subject_code }}</span>
+                            <span class="fw-medium text-dark ms-1">{{ session.timetable_slot.subject_name }}</span>
+                            <div class="small text-muted">{{ session.timetable_slot.department }} ({{ session.timetable_slot.section }})</div>
+                        </td>
+                        <td class="small">{{ session.timetable_slot.room.building_code }} {{ session.timetable_slot.room.room_number }}</td>
+                        <td class="small">{{ session.conducted_by.get_full_name|default:session.conducted_by.username }}</td>
+                        <td>
+                            <span class="badge badge-rwb-notice">{{ session.present_count }} / {{ session.total_count }} present</span>
+                        </td>
+                        <td class="small fw-semibold">
+                            {% widthratio session.present_count session.total_count 100 %}%
+                        </td>
+                        <td class="text-end">
+                            <a href="{% url 'academics:attendance_mark' %}?slot={{ session.timetable_slot.id }}&date={{ session.date|date:'Y-m-d' }}" class="btn btn-sm btn-outline-primary">
+                                Edit &rarr;
+                            </a>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="7" class="text-center py-5 text-muted">
+                            <i class="bi bi-check2-circle fs-2 d-block mb-2"></i>
+                            No attendance sessions recorded yet.
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

@@ -1,0 +1,181 @@
+{% extends 'base.html' %}
+
+{% block title %}Authorized College Email Domains - CampusCare Admin{% endblock %}
+
+{% block content %}
+<div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
+    <div>
+        <div class="d-flex align-items-center gap-2 mb-1">
+            <h3 class="fw-bold mb-0">Authorized College Email Domains</h3>
+            <span class="badge badge-rwb-alert">Admin Configuration</span>
+        </div>
+        <p class="text-muted small mb-0">
+            Control which college, university, and campus email domains are authorized to register and sign in.
+        </p>
+    </div>
+    <div>
+        <a href="{% url 'accounts:user_list' %}" class="btn btn-outline-secondary btn-sm me-2">
+            <i class="bi bi-people me-1"></i> User Directory
+        </a>
+        <a href="/admin/accounts/allowedemaildomain/" class="btn btn-dark btn-sm">
+            <i class="bi bi-database-gear me-1"></i> Open in Django Admin
+        </a>
+    </div>
+</div>
+
+<div class="row g-4">
+    <!-- Left: Add New Domain Card -->
+    <div class="col-lg-4">
+        <div class="card shadow-sm border-0 sticky-top" style="top: 1rem;">
+            <div class="card-header bg-dark text-white py-3">
+                <h6 class="fw-bold mb-0"><i class="bi bi-plus-circle me-2"></i>Add Authorized Domain</h6>
+            </div>
+            <div class="card-body p-4">
+                <form method="post" novalidate>
+                    {% csrf_token %}
+                    
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold small">Domain Name <span class="text-danger">*</span></label>
+                        {{ form.domain }}
+                        <div class="form-text small">Enter domain without <code>@</code> (e.g., <code>mit.edu</code>, <code>stanford.edu</code>, <code>engg.ac.in</code>).</div>
+                        {% if form.domain.errors %}
+                        <div class="text-danger small mt-1">{{ form.domain.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold small">College / University Name</label>
+                        {{ form.college_name }}
+                        <div class="form-text small">Optional institution label for student clarity.</div>
+                        {% if form.college_name.errors %}
+                        <div class="text-danger small mt-1">{{ form.college_name.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+
+                    <div class="mb-4">
+                        <div class="form-check form-switch">
+                            {{ form.is_active }}
+                            <label class="form-check-label fw-semibold small ms-2" for="{{ form.is_active.id_for_label }}">
+                                Enable Domain Immediately
+                            </label>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary w-100 shadow-sm">
+                        <i class="bi bi-shield-check me-1"></i> Authorize Domain
+                    </button>
+                </form>
+
+                <div class="alert alert-info py-2 small mt-3 mb-0">
+                    <i class="bi bi-info-circle me-1"></i> Newly added domains take effect immediately for registrations across all departments.
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Right: Configured Domains Table & Stats -->
+    <div class="col-lg-8">
+        <!-- Stats Summary -->
+        <div class="row g-3 mb-4">
+            <div class="col-sm-4">
+                <div class="card shadow-sm border-0 p-3 bg-light">
+                    <div class="text-muted small text-uppercase fw-semibold">Active Database Domains</div>
+                    <div class="h3 fw-bold text-dark mb-0">{{ active_domains_count }}</div>
+                </div>
+            </div>
+            <div class="col-sm-4">
+                <div class="card shadow-sm border-0 p-3 bg-light">
+                    <div class="text-muted small text-uppercase fw-semibold">Total Registered Domains</div>
+                    <div class="h3 fw-bold text-dark mb-0">{{ domains.count }}</div>
+                </div>
+            </div>
+            <div class="col-sm-4">
+                <div class="card shadow-sm border-0 p-3 bg-light">
+                    <div class="text-muted small text-uppercase fw-semibold">Env Fallbacks</div>
+                    <div class="small fw-semibold text-secondary text-truncate mt-1">
+                        {% for d in fallback_domains %}<code>@{{ d }}</code>{% if not forloop.last %}, {% endif %}{% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card shadow-sm border-0 overflow-hidden">
+            <div class="card-header bg-white py-3 border-bottom d-flex justify-content-between align-items-center">
+                <h6 class="fw-bold mb-0 text-dark">
+                    <i class="bi bi-globe me-2 text-dark"></i>Configured Email Domains
+                </h6>
+                <span class="badge bg-secondary">{{ domains.count }} Defined</span>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light small">
+                            <tr>
+                                <th>Allowed Domain</th>
+                                <th>College / Institution</th>
+                                <th>Status</th>
+                                <th>Added By</th>
+                                <th>Created</th>
+                                <th class="text-end">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for d in domains %}
+                            <tr>
+                                <td>
+                                    <span class="font-monospace fw-bold text-dark">@{{ d.domain }}</span>
+                                </td>
+                                <td>
+                                    <div class="fw-semibold text-dark">{{ d.college_name|default:"General Institutional Domain" }}</div>
+                                </td>
+                                <td>
+                                    {% if d.is_active %}
+                                    <span class="badge badge-rwb-notice">
+                                        <i class="bi bi-check-circle me-1"></i>Active
+                                    </span>
+                                    {% else %}
+                                    <span class="badge badge-rwb-alert">
+                                        <i class="bi bi-dash-circle me-1"></i>Disabled
+                                    </span>
+                                    {% endif %}
+                                </td>
+                                <td class="small text-muted">
+                                    {{ d.created_by.username|default:"System Initializer" }}
+                                </td>
+                                <td class="small text-muted">
+                                    {{ d.created_at|date:"M d, Y" }}
+                                </td>
+                                <td class="text-end">
+                                    <div class="btn-group btn-group-sm">
+                                        <a href="{% url 'accounts:domain_toggle' d.id %}" class="btn btn-outline-secondary" title="{% if d.is_active %}Deactivate{% else %}Activate{% endif %}">
+                                            {% if d.is_active %}
+                                            <i class="bi bi-pause-fill text-danger"></i> Disable
+                                            {% else %}
+                                            <i class="bi bi-play-fill text-dark"></i> Enable
+                                            {% endif %}
+                                        </a>
+                                        <a href="{% url 'accounts:domain_delete' d.id %}" class="btn btn-outline-danger" onclick="return confirm('Are you sure you want to delete domain @{{ d.domain }}?');" title="Delete Domain">
+                                            <i class="bi bi-trash"></i>
+                                        </a>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="6" class="text-center py-5 text-muted">
+                                    <i class="bi bi-envelope-x fs-2 d-block mb-2 text-muted"></i>
+                                    No custom database domains added yet.<br>
+                                    The system is currently using fallback domains: 
+                                    {% for d in fallback_domains %}<code>@{{ d }}</code>{% if not forloop.last %}, {% endif %}{% endfor %}.
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

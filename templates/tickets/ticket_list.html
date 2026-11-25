@@ -1,0 +1,184 @@
+{% extends 'base.html' %}
+
+{% block title %}Maintenance Tickets - CampusCare{% endblock %}
+
+{% block content %}
+<div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
+    <div>
+        <h3 class="fw-bold mb-1">Maintenance Requests</h3>
+        <p class="text-muted small mb-0">Track, triage, and manage equipment and classroom repairs.</p>
+    </div>
+    <a href="{% url 'tickets:ticket_create' %}" class="btn btn-danger fw-semibold shadow-sm">
+        <i class="bi bi-plus-circle me-1"></i> Submit New Request
+    </a>
+</div>
+
+<!-- Scope Tabs -->
+<ul class="nav nav-pills mb-3 gap-1">
+    {% if user.is_reporter or user.is_manager or user.is_admin_role %}
+    <li class="nav-item">
+        <a class="nav-link {% if scope == 'my' %}active{% endif %}" href="{% url 'tickets:ticket_list' %}?scope=my">
+            <i class="bi bi-person me-1"></i> My Submitted Tickets
+        </a>
+    </li>
+    {% endif %}
+
+    {% if user.is_technician or user.is_manager or user.is_admin_role %}
+    <li class="nav-item">
+        <a class="nav-link {% if scope == 'assigned' %}active{% endif %}" href="{% url 'tickets:ticket_list' %}?scope=assigned">
+            <i class="bi bi-wrench me-1"></i> Assigned To Me
+        </a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link {% if scope == 'unassigned' %}active{% endif %}" href="{% url 'tickets:ticket_list' %}?scope=unassigned">
+            <i class="bi bi-inbox me-1"></i> Unassigned Pool
+        </a>
+    </li>
+    {% endif %}
+
+    <li class="nav-item">
+        <a class="nav-link {% if scope == 'all' %}active{% endif %}" href="{% url 'tickets:ticket_list' %}?scope=all">
+            <i class="bi bi-grid me-1"></i> All Tickets
+        </a>
+    </li>
+</ul>
+
+<!-- Filter Bar -->
+<div class="card mb-4 shadow-sm border">
+    <div class="card-body p-3">
+        <form method="get" class="row g-2 align-items-center">
+            <input type="hidden" name="scope" value="{{ scope }}">
+
+            <div class="col-md-3">
+                <div class="input-group">
+                    <span class="input-group-text bg-white"><i class="bi bi-search"></i></span>
+                    <input type="text" name="q" value="{{ search_query }}" class="form-control" placeholder="Search ticket #, title, room...">
+                </div>
+            </div>
+
+            <div class="col-md-2">
+                <select name="status" class="form-select">
+                    <option value="">All Statuses</option>
+                    {% for s_val, s_label in statuses %}
+                    <option value="{{ s_val }}" {% if status_filter == s_val %}selected{% endif %}>{{ s_label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="col-md-2">
+                <select name="priority" class="form-select">
+                    <option value="">All Priorities</option>
+                    {% for p_val, p_label in priorities %}
+                    <option value="{{ p_val }}" {% if priority_filter == p_val %}selected{% endif %}>{{ p_label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="col-md-2">
+                <select name="category" class="form-select">
+                    <option value="">All Categories</option>
+                    {% for c_val, c_label in categories %}
+                    <option value="{{ c_val }}" {% if category_filter == c_val %}selected{% endif %}>{{ c_label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="col-md-2">
+                <select name="room" class="form-select">
+                    <option value="">All Rooms</option>
+                    {% for r in rooms %}
+                    <option value="{{ r.id }}" {% if room_filter|add:0 == r.id %}selected{% endif %}>{{ r.building_code }} {{ r.room_number }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="col-md-1 d-flex gap-1">
+                <button type="submit" class="btn btn-primary w-100">Go</button>
+                {% if search_query or status_filter or priority_filter or category_filter or room_filter %}
+                <a href="{% url 'tickets:ticket_list' %}?scope={{ scope }}" class="btn btn-outline-secondary" title="Reset Filters"><i class="bi bi-x"></i></a>
+                {% endif %}
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Tickets Table -->
+<div class="card shadow-sm border-0">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light small">
+                    <tr>
+                        <th style="width: 140px;">Ticket Code</th>
+                        <th>Issue Summary & Asset</th>
+                        <th>Room</th>
+                        <th>Category</th>
+                        <th>Priority</th>
+                        <th>Status</th>
+                        <th>Reporter / Assignee</th>
+                        <th>Created</th>
+                        <th class="text-end">Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for ticket in tickets %}
+                    <tr>
+                        <td>
+                            <a href="{% url 'tickets:ticket_detail' ticket.ticket_code %}" class="fw-bold text-decoration-none">
+                                #{{ ticket.ticket_code }}
+                            </a>
+                        </td>
+                        <td>
+                            <div class="fw-semibold text-dark">
+                                {{ ticket.title }}
+                                <span class="badge badge-rwb-alert ms-1" style="font-size: 0.65rem;">Updated</span>
+                            </div>
+                            {% if ticket.asset %}
+                            <div class="small text-muted"><i class="bi bi-cpu me-1"></i>{{ ticket.asset.name }} [{{ ticket.asset.asset_tag }}]</div>
+                            {% endif %}
+                        </td>
+                        <td class="small">
+                            <a href="{% url 'facilities:room_detail' ticket.room.id %}" class="text-decoration-none text-dark fw-medium">
+                                {{ ticket.room.building_code }} {{ ticket.room.room_number }}
+                            </a>
+                            <div class="text-muted" style="font-size: 0.75rem;">{{ ticket.room.building_name }}</div>
+                        </td>
+                        <td>
+                            <span class="badge bg-light text-dark border">{{ ticket.get_category_display }}</span>
+                        </td>
+                        <td>
+                            <span class="badge badge-priority-{{ ticket.priority }}">{{ ticket.get_priority_display }}</span>
+                        </td>
+                        <td>
+                            <span class="badge badge-status-{{ ticket.status }}">{{ ticket.get_status_display }}</span>
+                        </td>
+                        <td class="small">
+                            <div><i class="bi bi-person me-1 text-muted"></i>{{ ticket.reported_by.get_full_name|default:ticket.reported_by.username }}</div>
+                            <div class="text-muted" style="font-size: 0.8rem;">
+                                <i class="bi bi-wrench me-1"></i>{% if ticket.assigned_to %}{{ ticket.assigned_to.get_full_name|default:ticket.assigned_to.username }}{% else %}Unassigned{% endif %}
+                            </div>
+                        </td>
+                        <td class="small text-muted">
+                            {{ ticket.created_at|date:"M d, Y" }}
+                        </td>
+                        <td class="text-end">
+                            <a href="{% url 'tickets:ticket_detail' ticket.ticket_code %}" class="btn btn-sm btn-outline-primary">
+                                View &rarr;
+                            </a>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="9" class="text-center py-5 text-muted">
+                            <i class="bi bi-inbox fs-2 d-block mb-2"></i>
+                            No maintenance tickets match the selected criteria.
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

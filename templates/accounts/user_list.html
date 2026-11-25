@@ -1,0 +1,81 @@
+{% extends 'base.html' %}
+
+{% block title %}User & Role Management - CampusCare{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h3 class="fw-bold mb-1">User & Role Management</h3>
+        <p class="text-muted small mb-0">Review system users and assign operational roles (Technician, Manager, Admin).</p>
+    </div>
+    <div class="d-flex gap-2">
+        <a href="/admin/accounts/user/add/" target="_blank" class="btn btn-outline-secondary btn-sm">
+            <i class="bi bi-person-plus me-1"></i> Add in Django Admin
+        </a>
+    </div>
+</div>
+
+<div class="card mb-4">
+    <div class="card-header bg-white py-3 d-flex flex-wrap justify-content-between align-items-center gap-3">
+        <div class="d-flex align-items-center gap-2">
+            <span class="small fw-semibold text-muted">Filter Role:</span>
+            <a href="{% url 'accounts:user_list' %}" class="btn btn-xs {% if not role_filter %}btn-dark{% else %}btn-outline-secondary{% endif %}">All</a>
+            {% for r_code, r_label in roles %}
+            <a href="{% url 'accounts:user_list' %}?role={{ r_code }}" class="btn btn-xs {% if role_filter == r_code %}btn-dark{% else %}btn-outline-secondary{% endif %}">
+                {{ r_label }}
+            </a>
+            {% endfor %}
+        </div>
+        <span class="badge badge-rwb-ticket">{{ users.count }} total users</span>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light small">
+                    <tr>
+                        <th>Username</th>
+                        <th>Name</th>
+                        <th>Email</th>
+                        <th>Department</th>
+                        <th>Role</th>
+                        <th>Staff / Superuser</th>
+                        <th class="text-end">Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for u in users %}
+                    <tr>
+                        <td class="fw-bold">{{ u.username }}</td>
+                        <td>{{ u.get_full_name|default:"-" }}</td>
+                        <td class="small">{{ u.email|default:"-" }}</td>
+                        <td class="small text-muted">{{ u.department|default:"-" }}</td>
+                        <td>
+                            <span class="badge {% if u.role == 'ADMIN' %}badge-role-admin{% elif u.role == 'MANAGER' %}badge-role-manager{% elif u.role == 'TECHNICIAN' %}badge-role-technician{% else %}badge-role-reporter{% endif %}">
+                                {{ u.get_role_display }}
+                            </span>
+                        </td>
+                        <td>
+                            {% if u.is_superuser %}
+                            <span class="badge badge-rwb-alert">Superuser</span>
+                            {% elif u.is_staff %}
+                            <span class="badge bg-dark text-white">Staff</span>
+                            {% else %}
+                            <span class="badge badge-rwb-ticket text-muted">Standard</span>
+                            {% endif %}
+                        </td>
+                        <td class="text-end">
+                            <a href="{% url 'accounts:user_edit_role' u.id %}" class="btn btn-sm btn-outline-primary">
+                                <i class="bi bi-pencil me-1"></i>Edit Role
+                            </a>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr><td colspan="7" class="text-center py-4 text-muted">No users found for this filter.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

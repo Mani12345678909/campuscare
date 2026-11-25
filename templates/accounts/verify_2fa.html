@@ -1,0 +1,65 @@
+{% extends 'base.html' %}
+
+{% block title %}Two-Step Verification (2FA) - CampusCare{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center py-5">
+    <div class="col-md-6 col-lg-5">
+        <div class="card shadow border-0 overflow-hidden">
+            <div class="card-header bg-dark text-white text-center py-4">
+                <div class="kpi-icon-box kpi-icon-red d-inline-flex p-3 rounded-circle mb-2" style="width: 56px; height: 56px;">
+                    <i class="bi bi-shield-check fs-2" style="color: var(--rwb-red);"></i>
+                </div>
+                <h4 class="fw-bold mb-1">First-Login 2FA Security</h4>
+                <p class="small text-light text-opacity-75 mb-0">Verify your identity before entering the campus portal</p>
+            </div>
+            <div class="card-body p-4 p-md-5">
+                <p class="text-muted small text-center mb-4">
+                    A 6-digit one-time code has been dispatched to your college email:<br>
+                    <strong class="text-dark">{{ user_email }}</strong>
+                </p>
+
+                {% if latest_otp %}
+                <div class="alert alert-info py-2 small d-flex justify-content-between align-items-center mb-4">
+                    <span><i class="bi bi-info-circle me-1"></i> Development Console OTP:</span>
+                    <strong class="font-monospace fs-5 text-primary">{{ latest_otp.otp_code }}</strong>
+                </div>
+                {% endif %}
+
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="mb-4">
+                        <label class="form-label fw-semibold small text-center d-block">Enter 6-Digit Code</label>
+                        {{ form.otp_code }}
+                        {{ form.otp_code.errors }}
+                    </div>
+
+                    <div class="d-grid mb-3">
+                        <button type="submit" class="btn btn-primary btn-lg fw-medium">
+                            <i class="bi bi-check2-circle me-1"></i> Verify & Proceed
+                        </button>
+                    </div>
+                </form>
+
+                <div class="text-center small mt-3">
+                    Didn't receive the email?
+                    <a href="{% url 'accounts:resend_otp' %}" class="fw-semibold text-decoration-none">
+                        Resend Code
+                    </a>
+                </div>
+
+                <hr class="my-4">
+                <div class="text-center">
+                    <form method="post" action="{% url 'accounts:logout' %}">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-link text-muted btn-sm text-decoration-none">
+                            <i class="bi bi-box-arrow-left me-1"></i> Cancel & Sign Out
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

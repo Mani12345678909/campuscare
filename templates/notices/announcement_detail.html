@@ -1,0 +1,51 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ announcement.title }} - CampusCare{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="mb-3">
+            <a href="{% url 'notices:announcement_list' %}" class="text-decoration-none small text-muted">
+                &larr; Back to Announcements
+            </a>
+        </div>
+        <div class="card shadow-sm border-0 mb-4">
+            <div class="card-body p-4 p-md-5">
+                <div class="d-flex flex-wrap align-items-center gap-2 mb-3">
+                    <span class="badge badge-rwb-notice fs-6">{{ announcement.get_announcement_type_display }}</span>
+                    <span class="badge bg-light text-dark border">Audience: {{ announcement.get_target_role_display }}</span>
+                    {% if announcement.is_pinned %}
+                    <span class="badge bg-dark text-white"><i class="bi bi-pin-angle-fill me-1"></i>Pinned</span>
+                    {% endif %}
+                </div>
+
+                <h2 class="fw-bold text-dark mb-3">{{ announcement.title }}</h2>
+
+                <div class="d-flex align-items-center gap-3 text-muted small pb-3 mb-4 border-bottom">
+                    <span><i class="bi bi-person me-1"></i>Posted by <strong>{% if announcement.created_by %}{{ announcement.created_by.get_full_name|default:announcement.created_by.username }}{% else %}Administration{% endif %}</strong></span>
+                    <span>&bull;</span>
+                    <span><i class="bi bi-clock me-1"></i>{{ announcement.created_at|date:"F d, Y H:i" }}</span>
+                    {% if announcement.event_date %}
+                    <span>&bull;</span>
+                    <span class="text-dark fw-semibold"><i class="bi bi-calendar-event me-1"></i>Event Date: {{ announcement.event_date|date:"F d, Y" }}</span>
+                    {% endif %}
+                    {% if announcement.due_date %}
+                    <span>&bull;</span>
+                    <span class="text-danger fw-semibold"><i class="bi bi-exclamation-triangle me-1"></i>Deadline: {{ announcement.due_date|date:"F d, Y" }}</span>
+                    {% endif %}
+                </div>
+
+                <div class="lead fw-normal text-secondary mb-4 p-3 bg-light rounded-3 border">
+                    {{ announcement.summary }}
+                </div>
+
+                <div class="lh-lg text-dark fs-6">
+                    {{ announcement.body|linebreaks }}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

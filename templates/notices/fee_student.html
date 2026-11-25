@@ -1,0 +1,87 @@
+{% extends 'base.html' %}
+
+{% block title %}My Fee Records & Notices - CampusCare{% endblock %}
+
+{% block content %}
+<div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
+    <div>
+        <h3 class="fw-bold mb-1"><i class="bi bi-receipt-cutoff text-primary me-2"></i>My Fee Records & Deadlines</h3>
+        <p class="text-muted small mb-0">Track your tuition dues, amenities fees, payment receipts, and deadline schedules.</p>
+    </div>
+</div>
+
+<div class="row g-3 mb-4">
+    <div class="col-md-6">
+        <div class="card kpi-card warning p-3">
+            <div class="text-muted small text-uppercase fw-semibold">Pending / Overdue Fees</div>
+            <div class="fs-2 fw-bold text-dark mt-1">${{ total_due }}</div>
+            <div class="small text-muted mt-1">Outstanding dues awaiting settlement</div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card kpi-card success p-3">
+            <div class="text-muted small text-uppercase fw-semibold">Total Cleared Fees</div>
+            <div class="fs-2 fw-bold text-success mt-1">${{ total_paid }}</div>
+            <div class="small text-muted mt-1">Successfully paid & verified fees</div>
+        </div>
+    </div>
+</div>
+
+<div class="card shadow-sm border-0">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light small">
+                    <tr>
+                        <th>Academic Term</th>
+                        <th>Fee Category</th>
+                        <th>Amount</th>
+                        <th>Due Date</th>
+                        <th>Status</th>
+                        <th>Paid Date & Receipt</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for fee in records %}
+                    <tr>
+                        <td class="fw-semibold">{{ fee.academic_term }}</td>
+                        <td>{{ fee.fee_category }}</td>
+                        <td class="fw-bold text-dark">${{ fee.amount }}</td>
+                        <td class="small">{{ fee.due_date|date:"M d, Y" }}</td>
+                        <td>
+                            {% if fee.status == 'PAID' %}
+                            <span class="badge badge-rwb-notice">Paid</span>
+                            {% elif fee.status == 'OVERDUE' %}
+                            <span class="badge badge-rwb-alert">Overdue</span>
+                            {% elif fee.status == 'SCHOLARSHIP' %}
+                            <span class="badge bg-dark text-white">Scholarship Waived</span>
+                            {% else %}
+                            <span class="badge badge-rwb-ticket">Pending Due</span>
+                            {% endif %}
+                        </td>
+                        <td class="small">
+                            {% if fee.paid_date %}
+                            <div><i class="bi bi-calendar-check me-1 text-dark"></i>{{ fee.paid_date|date:"M d, Y" }}</div>
+                            {% if fee.receipt_number %}
+                            <code>{{ fee.receipt_number }}</code>
+                            {% endif %}
+                            {% else %}
+                            <span class="text-muted">-</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="6" class="text-center py-5 text-muted">
+                            <i class="bi bi-check2-circle fs-2 d-block mb-2 text-success"></i>
+                            No fee records pending for your student account!
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

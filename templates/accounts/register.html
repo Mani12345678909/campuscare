@@ -1,0 +1,98 @@
+{% extends 'base.html' %}
+
+{% block title %}Register - CampusCare{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center py-4">
+    <div class="col-md-7 col-lg-6">
+        <div class="card shadow-sm border-0">
+            <div class="card-header py-3 text-center border-bottom">
+                <i class="bi bi-person-plus-fill fs-2 d-block mb-1" style="color: var(--cms-primary);"></i>
+                <h4 class="fw-bold mb-0">Create an Account</h4>
+                <p class="text-muted small mb-0">Sign up as a student or faculty member (Default role: <strong>REPORTER</strong>)</p>
+            </div>
+            <div class="card-body p-4">
+                <form method="post">
+                    {% csrf_token %}
+
+                    {% if form.non_field_errors %}
+                    <div class="alert alert-danger py-2 small">
+                        {% for err in form.non_field_errors %}{{ err }}<br>{% endfor %}
+                    </div>
+                    {% endif %}
+
+                    <div class="row g-3 mb-3">
+                        <div class="col-sm-6">
+                            <label class="form-label fw-semibold small">First Name</label>
+                            {{ form.first_name }}
+                            {{ form.first_name.errors }}
+                        </div>
+                        <div class="col-sm-6">
+                            <label class="form-label fw-semibold small">Last Name</label>
+                            {{ form.last_name }}
+                            {{ form.last_name.errors }}
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold small">Username <span class="text-danger">*</span></label>
+                        {{ form.username }}
+                        <div class="form-text small">Required. Letters, digits and @/./+/-/_ only.</div>
+                        {{ form.username.errors }}
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold small">College Email Address <span class="text-danger">*</span></label>
+                        {{ form.email }}
+                        <div class="form-text small mt-1">
+                            <i class="bi bi-shield-check text-success me-1"></i>Approved Institutional Domains:
+                            {% for d in allowed_college_domains %}
+                            <span class="badge badge-rwb-notice">@{{ d }}</span>
+                            {% endfor %}
+                        </div>
+                        {{ form.email.errors }}
+                    </div>
+
+                    <div class="row g-3 mb-3">
+                        <div class="col-sm-6">
+                            <label class="form-label fw-semibold small">Department / Academic Unit</label>
+                            {{ form.department }}
+                            {{ form.department.errors }}
+                        </div>
+                        <div class="col-sm-6">
+                            <label class="form-label fw-semibold small">Phone Number</label>
+                            {{ form.phone_number }}
+                            {{ form.phone_number.errors }}
+                        </div>
+                    </div>
+
+                    <div class="row g-3 mb-4">
+                        <div class="col-sm-6">
+                            <label class="form-label fw-semibold small">Password <span class="text-danger">*</span></label>
+                            {{ form.password }}
+                            {{ form.password.errors }}
+                        </div>
+                        <div class="col-sm-6">
+                            <label class="form-label fw-semibold small">Confirm Password <span class="text-danger">*</span></label>
+                            {{ form.confirm_password }}
+                            {{ form.confirm_password.errors }}
+                        </div>
+                    </div>
+
+                    <div class="d-grid mb-3">
+                        <button type="submit" class="btn btn-primary fw-medium py-2">
+                            <i class="bi bi-person-check me-1"></i> Complete Registration
+                        </button>
+                    </div>
+                </form>
+
+                <div class="text-center small text-muted">
+                    Already have an account? 
+                    <a href="{% url 'accounts:login' %}" class="fw-semibold text-decoration-none">Sign in here</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

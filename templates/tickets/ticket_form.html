@@ -1,0 +1,194 @@
+{% extends 'base.html' %}
+
+{% block title %}Report Maintenance Issue - CampusCare{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card shadow-sm border-0 mb-4">
+            <div class="card-header bg-white py-3 border-bottom">
+                <h4 class="fw-bold mb-0 text-dark"><i class="bi bi-tools text-danger me-2"></i>Report Classroom / Lab Maintenance Issue</h4>
+                <p class="text-muted small mb-0">Submit a detailed work request so our facilities and technician teams can resolve it promptly.</p>
+            </div>
+            <div class="card-body p-4">
+                <!-- Live Duplicate Detection Alert Box -->
+                <div id="duplicate-warning-container" class="alert alert-danger d-none mb-4" role="alert">
+                    <div class="d-flex align-items-center gap-2 mb-2">
+                        <i class="bi bi-exclamation-triangle-fill fs-5 text-danger"></i>
+                        <strong class="text-dark">Potential Duplicate Notice:</strong>
+                        <span id="duplicate-count-badge" class="badge badge-rwb-alert"></span>
+                    </div>
+                    <p class="small mb-2">
+                        Other users have already reported active issues in this room/asset. Please check below to avoid duplicate submissions:
+                    </p>
+                    <div id="duplicate-tickets-list" class="list-group list-group-flush border rounded bg-white small mb-1">
+                        <!-- Filled by JS -->
+                    </div>
+                </div>
+
+                <form method="post" enctype="multipart/form-data" id="ticket-form">
+                    {% csrf_token %}
+
+                    {% if form.non_field_errors %}
+                    <div class="alert alert-danger py-2 small">
+                        {% for err in form.non_field_errors %}{{ err }}<br>{% endfor %}
+                    </div>
+                    {% endif %}
+
+                    <!-- Location Section -->
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold small">
+                                Classroom / Facility Location <span class="text-danger">*</span>
+                            </label>
+                            {{ form.room }}
+                            {{ form.room.errors }}
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold small">
+                                Specific Equipment / Asset <span class="text-muted fw-normal">(Optional)</span>
+                            </label>
+                            {{ form.asset }}
+                            <div class="form-text small" id="asset-hint">Select a room first to see installed equipment.</div>
+                            {{ form.asset.errors }}
+                        </div>
+                    </div>
+
+                    <!-- Category & Priority -->
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold small">Issue Category <span class="text-danger">*</span></label>
+                            {{ form.category }}
+                            {{ form.category.errors }}
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold small">Urgency Priority <span class="text-danger">*</span></label>
+                            {{ form.priority }}
+                            <div class="form-text small">Select CRITICAL only if immediate safety hazard or lecture disruption.</div>
+                            {{ form.priority.errors }}
+                        </div>
+                    </div>
+
+                    <!-- Title -->
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold small">Issue Summary / Title <span class="text-danger">*</span></label>
+                        {{ form.title }}
+                        {{ form.title.errors }}
+                    </div>
+
+                    <!-- Description -->
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold small">Detailed Description <span class="text-danger">*</span></label>
+                        {{ form.description }}
+                        <div class="form-text small">Include specific symptoms, error messages, fixture location, or times the problem occurs.</div>
+                        {{ form.description.errors }}
+                    </div>
+
+                    <!-- Photo Upload -->
+                    <div class="mb-4">
+                        <label class="form-label fw-semibold small">
+                            <i class="bi bi-camera me-1"></i> Issue Photo <span class="text-muted fw-normal">(Optional - max 5MB)</span>
+                        </label>
+                        {{ form.issue_photo }}
+                        <div class="form-text small">Attaching a clear photo of the error, damaged part, or leaking unit helps technicians arrive with the right tools.</div>
+                        {{ form.issue_photo.errors }}
+                    </div>
+
+                    <div class="d-flex justify-content-between align-items-center pt-3 border-top">
+                        <a href="{% url 'tickets:ticket_list' %}" class="btn btn-outline-secondary">Cancel</a>
+                        <button type="submit" class="btn btn-primary px-4 fw-medium">
+                            <i class="bi bi-send me-1"></i> Submit Maintenance Request
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const roomSelect = document.getElementById('id_room');
+    const assetSelect = document.getElementById('id_asset');
+    const duplicateContainer = document.getElementById('duplicate-warning-container');
+    const duplicateList = document.getElementById('duplicate-tickets-list');
+    const duplicateBadge = document.getElementById('duplicate-count-badge');
+    const assetHint = document.getElementById('asset-hint');
+
+    function updateAssetsAndDuplicates() {
+        const roomId = roomSelect.value;
+        const assetId = assetSelect.value;
+
+        if (!roomId) {
+            assetSelect.innerHTML = '<option value="">-- Select Room First --</option>';
+            duplicateContainer.classList.add('d-none');
+            return;
+        }
+
+        // 1. Fetch Room Assets
+        fetch(`/facilities/api/rooms/${roomId}/assets/`)
+            .then(response => response.json())
+            .then(data => {
+                const currentVal = assetSelect.value;
+                let optionsHtml = '<option value="">-- No Specific Asset / General Room Issue --</option>';
+                data.assets.forEach(asset => {
+                    const isSelected = (currentVal == asset.id) ? 'selected' : '';
+                    optionsHtml += `<option value="${asset.id}" ${isSelected}>${asset.name} [${asset.tag}] (${asset.status_display})</option>`;
+                });
+                assetSelect.innerHTML = optionsHtml;
+                assetHint.textContent = `${data.assets.length} equipment item(s) found in this room.`;
+            })
+            .catch(err => console.error("Error fetching assets:", err));
+
+        // 2. Check for Duplicate Open Tickets
+        checkDuplicates(roomId, assetId);
+    }
+
+    function checkDuplicates(roomId, assetId) {
+        if (!roomId) return;
+        let url = `/tickets/api/check-duplicates/?room_id=${roomId}`;
+        if (assetId) {
+            url += `&asset_id=${assetId}`;
+        }
+
+        fetch(url)
+            .then(res => res.json())
+            .then(data => {
+                if (data.tickets && data.tickets.length > 0) {
+                    duplicateContainer.classList.remove('d-none');
+                    duplicateBadge.textContent = `${data.tickets.length} open ticket(s)`;
+
+                    let listHtml = '';
+                    data.tickets.forEach(t => {
+                        listHtml += `
+                            <a href="${t.url}" target="_blank" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center py-2">
+                                <div>
+                                    <strong class="text-primary">#${t.ticket_code}</strong>: ${t.title}
+                                    <div class="text-muted" style="font-size: 0.75rem;">Status: ${t.status} &bull; Priority: ${t.priority} &bull; Reported: ${t.created_at}</div>
+                                </div>
+                                <span class="badge bg-light text-dark border">Inspect &rarr;</span>
+                            </a>
+                        `;
+                    });
+                    duplicateList.innerHTML = listHtml;
+                } else {
+                    duplicateContainer.classList.add('d-none');
+                    duplicateList.innerHTML = '';
+                }
+            })
+            .catch(err => console.error("Error checking duplicates:", err));
+    }
+
+    roomSelect.addEventListener('change', updateAssetsAndDuplicates);
+    assetSelect.addEventListener('change', function() {
+        checkDuplicates(roomSelect.value, this.value);
+    });
+
+    // Run once on page load if preselected
+    if (roomSelect.value) {
+        updateAssetsAndDuplicates();
+    }
+});
+</script>
+{% endblock %}
+

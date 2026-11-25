@@ -1,0 +1,348 @@
+{% extends 'base.html' %}
+
+{% block title %}#{{ ticket.ticket_code }} - {{ ticket.title }} - CampusCare{% endblock %}
+
+{% block content %}
+<!-- Ticket Header -->
+<div class="card mb-4 border-0 shadow-sm">
+    <div class="card-body p-4 bg-white rounded-3">
+        <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-start gap-3">
+            <div>
+                <div class="d-flex flex-wrap align-items-center gap-2 mb-2">
+                    <span class="fs-4 fw-bold text-primary font-monospace">#{{ ticket.ticket_code }}</span>
+                    <span class="badge badge-status-{{ ticket.status }} px-3 py-1 fs-6">{{ ticket.get_status_display
+                        }}</span>
+                    <span class="badge badge-priority-{{ ticket.priority }} px-3 py-1 fs-6">{{
+                        ticket.get_priority_display }} Priority</span>
+                    <span class="badge bg-light text-dark border">{{ ticket.get_category_display }}</span>
+                </div>
+                <h3 class="fw-bold text-dark mb-1">{{ ticket.title }}</h3>
+                <div class="text-muted small">
+                    Reported by <strong>{{ ticket.reported_by.get_full_name|default:ticket.reported_by.username
+                        }}</strong>
+                    {% if ticket.reported_by.department %}({{ ticket.reported_by.department }}){% endif %}
+                    &bull; {{ ticket.created_at|date:"M d, Y H:i" }} ({{ ticket.created_at|timesince }} ago)
+                </div>
+            </div>
+
+            <!-- Role Action Trigger Buttons -->
+            <div class="d-flex flex-wrap gap-2">
+                {% if can_update %}
+                <button type="button" class="btn btn-danger fw-semibold" data-bs-toggle="modal"
+                    data-bs-target="#updateStatusModal">
+                    <i class="bi bi-arrow-repeat me-1"></i> Update Status & Notes
+                </button>
+                {% endif %}
+
+                {% if can_assign %}
+                <button type="button" class="btn btn-primary" data-bs-toggle="modal"
+                    data-bs-target="#assignTicketModal">
+                    <i class="bi bi-person-check me-1"></i> Assign / Triage
+                </button>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4">
+    <!-- Left Column: Details, Asset Info, Description & Photo -->
+    <div class="col-lg-8">
+        <!-- Ticket Information Card -->
+        <div class="card mb-4">
+            <div class="card-header bg-white py-3">
+                <h5 class="fw-bold mb-0"><i class="bi bi-info-circle text-primary me-2"></i>Issue Details</h5>
+            </div>
+            <div class="card-body p-4">
+                <div class="row g-3 mb-4">
+                    <div class="col-sm-6">
+                        <div class="text-muted small text-uppercase fw-semibold mb-1">Classroom / Facility</div>
+                        <div>
+                            <a href="{% url 'facilities:room_detail' ticket.room.id %}"
+                                class="fw-bold text-decoration-none fs-6">
+                                {{ ticket.room.building_code }} {{ ticket.room.room_number }}
+                            </a>
+                            <div class="text-muted small">{{ ticket.room.building_name }} &bull; Floor {{
+                                ticket.room.floor }}</div>
+                        </div>
+                    </div>
+
+                    <div class="col-sm-6">
+                        <div class="text-muted small text-uppercase fw-semibold mb-1">Assigned Technician</div>
+                        <div>
+                            {% if ticket.assigned_to %}
+                            <span class="fw-bold text-dark"><i class="bi bi-person-badge me-1 text-primary"></i>{{
+                                ticket.assigned_to.get_full_name|default:ticket.assigned_to.username }}</span>
+                            <div class="text-muted small">{{ ticket.assigned_to.department|default:"Maintenance Staff"
+                                }}</div>
+                            {% else %}
+                            <span class="badge badge-rwb-alert p-2">
+                                <i class="bi bi-exclamation-circle me-1"></i> Unassigned
+                            </span>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Asset Card if linked -->
+                {% if ticket.asset %}
+                <div class="p-3 bg-light rounded-3 border mb-4">
+                    <div class="d-flex justify-content-between align-items-center mb-1">
+                        <span class="small text-uppercase fw-bold text-secondary">
+                            <i class="bi bi-cpu me-1"></i>Linked Equipment Asset
+                        </span>
+                        <span class="badge bg-white text-dark border">Tag: {{ ticket.asset.asset_tag }}</span>
+                    </div>
+                    <div class="fw-bold text-dark fs-6">{{ ticket.asset.name }}</div>
+                    <div class="small text-muted">
+                        Category: {{ ticket.asset.get_category_display }} &bull;
+                        Operational Status: <span class="badge bg-secondary">{{ ticket.asset.get_status_display
+                            }}</span>
+                    </div>
+                </div>
+                {% endif %}
+
+                <!-- Description -->
+                <div class="mb-4">
+                    <div class="text-muted small text-uppercase fw-semibold mb-2">Description of Fault</div>
+                    <div class="p-3 bg-white border rounded-3 lh-base">
+                        {{ ticket.description|linebreaks }}
+                    </div>
+                </div>
+
+                <!-- Resolution Notes (if resolved) -->
+                {% if ticket.resolution_notes %}
+                <div class="mb-4">
+                    <div class="text-dark small text-uppercase fw-bold mb-2">
+                        <i class="bi bi-check-circle me-1"></i> Resolution Notes
+                    </div>
+                    <div class="p-3 bg-white border border-dark rounded-3 text-dark">
+                        {{ ticket.resolution_notes|linebreaks }}
+                        <div class="small text-muted mt-2 border-top pt-2">
+                            Resolved on {{ ticket.resolved_at|date:"M d, Y H:i" }}
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+
+                <!-- Issue Photo -->
+                {% if ticket.issue_photo %}
+                <div>
+                    <div class="text-muted small text-uppercase fw-semibold mb-2">
+                        <i class="bi bi-image me-1"></i> Attached Issue Photo
+                    </div>
+                    <div class="border rounded-3 p-2 bg-light text-center">
+                        <img src="{{ ticket.issue_photo.url }}" alt="Ticket Issue Photo" class="img-fluid rounded"
+                            style="max-height: 400px; object-fit: contain;">
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Activity & Status Timeline -->
+        <div class="card">
+            <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+                <h5 class="fw-bold mb-0"><i class="bi bi-clock-history text-primary me-2"></i>Status & Activity Log</h5>
+                <span class="badge badge-rwb-ticket">{{ updates.count }} entries</span>
+            </div>
+            <div class="card-body p-4">
+                <div class="timeline-container">
+                    {% for update in updates %}
+                    <div class="timeline-item">
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <span class="fw-bold text-dark">
+                                {% if update.author %}{{ update.author.get_full_name|default:update.author.username }}{%
+                                else %}System{% endif %}
+                                {% if update.author.role %}
+                                <span class="badge bg-light text-muted border ms-1" style="font-size: 0.7rem;">{{
+                                    update.author.get_role_display }}</span>
+                                {% endif %}
+                            </span>
+                            <span class="small text-muted">{{ update.created_at|date:"M d, Y H:i" }}</span>
+                        </div>
+
+                        {% if update.old_status or update.new_status %}
+                        <div class="mb-2">
+                            {% if update.old_status %}
+                            <span class="badge badge-status-{{ update.old_status }}">{{ update.old_status }}</span>
+                            <i class="bi bi-arrow-right mx-1 text-muted"></i>
+                            {% endif %}
+                            <span class="badge badge-status-{{ update.new_status }}">{{ update.new_status }}</span>
+                        </div>
+                        {% endif %}
+
+                        <div class="bg-light p-3 rounded-2 text-secondary small border">
+                            {{ update.comment|linebreaksbr }}
+                        </div>
+                    </div>
+                    {% empty %}
+                    <p class="text-muted text-center py-3">No activity updates logged yet.</p>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Right Column: Meta Info & Related Room Tickets -->
+    <div class="col-lg-4">
+        <!-- Quick Meta Card -->
+        <div class="card mb-4 shadow-sm">
+            <div class="card-header bg-white py-3">
+                <h6 class="fw-bold mb-0"><i class="bi bi-clipboard-data text-primary me-2"></i>Audit Information</h6>
+            </div>
+            <div class="card-body p-3 small">
+                <div class="d-flex justify-content-between py-1 border-bottom">
+                    <span class="text-muted">Ticket ID:</span>
+                    <strong class="font-monospace">{{ ticket.ticket_code }}</strong>
+                </div>
+                <div class="d-flex justify-content-between py-1 border-bottom">
+                    <span class="text-muted">Status:</span>
+                    <span class="badge badge-status-{{ ticket.status }}">{{ ticket.get_status_display }}</span>
+                </div>
+                <div class="d-flex justify-content-between py-1 border-bottom">
+                    <span class="text-muted">Priority:</span>
+                    <span class="badge badge-priority-{{ ticket.priority }}">{{ ticket.get_priority_display }}</span>
+                </div>
+                <div class="d-flex justify-content-between py-1 border-bottom">
+                    <span class="text-muted">Category:</span>
+                    <span>{{ ticket.get_category_display }}</span>
+                </div>
+                <div class="d-flex justify-content-between py-1 border-bottom">
+                    <span class="text-muted">Created:</span>
+                    <span>{{ ticket.created_at|date:"M d, Y H:i" }}</span>
+                </div>
+                <div class="d-flex justify-content-between py-1 border-bottom">
+                    <span class="text-muted">Last Updated:</span>
+                    <span>{{ ticket.updated_at|date:"M d, Y H:i" }}</span>
+                </div>
+                <div class="d-flex justify-content-between py-1">
+                    <span class="text-muted">Resolved At:</span>
+                    <span>{{ ticket.resolved_at|date:"M d, Y H:i"|default:"Pending" }}</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Related Room Tickets -->
+        <div class="card shadow-sm">
+            <div class="card-header bg-white py-3">
+                <h6 class="fw-bold mb-0"><i class="bi bi-clock text-dark me-2"></i>Other Tickets in this Room</h6>
+            </div>
+            <div class="card-body p-0">
+                {% if related_tickets %}
+                <div class="list-group list-group-flush small">
+                    {% for rt in related_tickets %}
+                    <a href="{% url 'tickets:ticket_detail' rt.ticket_code %}"
+                        class="list-group-item list-group-item-action p-3">
+                        <div class="d-flex justify-content-between align-items-start mb-1">
+                            <span class="fw-bold text-dark">#{{ rt.ticket_code }}</span>
+                            <span class="badge badge-status-{{ rt.status }}">{{ rt.get_status_display }}</span>
+                        </div>
+                        <div class="text-truncate text-secondary">{{ rt.title }}</div>
+                        <div class="text-muted" style="font-size: 0.75rem;">{{ rt.created_at|date:"M d, Y" }}</div>
+                    </a>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="p-3 text-center text-muted small">
+                    No other tickets registered for this room.
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ================= MODAL: STATUS UPDATE (Technician / Manager) ================= -->
+{% if can_update and status_form %}
+<div class="modal fade" id="updateStatusModal" tabindex="-1" aria-labelledby="updateStatusModalLabel"
+    aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-light">
+                <h5 class="modal-title fw-bold" id="updateStatusModalLabel">
+                    <i class="bi bi-arrow-repeat text-danger me-2"></i>Update Ticket Status
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form method="post" action="{% url 'tickets:ticket_update_status' ticket.ticket_code %}">
+                {% csrf_token %}
+                <div class="modal-body p-4">
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold small">New Status <span
+                                class="text-danger">*</span></label>
+                        {{ status_form.status }}
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold small">Work Activity / Status Comment <span
+                                class="text-danger">*</span></label>
+                        {{ status_form.comment }}
+                    </div>
+
+                    <div class="mb-3" id="resolution-notes-group">
+                        <label class="form-label fw-semibold small text-success">
+                            <i class="bi bi-check-circle me-1"></i> Resolution Notes <span class="text-danger">*
+                                (Required if Resolved)</span>
+                        </label>
+                        {{ status_form.resolution_notes }}
+                        <div class="form-text small">Explain root cause and corrective maintenance performed.</div>
+                    </div>
+                </div>
+                <div class="modal-footer bg-light">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save Status Update</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- ================= MODAL: ASSIGN / TRIAGE (Manager / Admin) ================= -->
+{% if can_assign and assign_form %}
+<div class="modal fade" id="assignTicketModal" tabindex="-1" aria-labelledby="assignTicketModalLabel"
+    aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-light">
+                <h5 class="modal-title fw-bold" id="assignTicketModalLabel">
+                    <i class="bi bi-person-check text-primary me-2"></i>Assign Technician & Triage
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form method="post" action="{% url 'tickets:ticket_assign' ticket.ticket_code %}">
+                {% csrf_token %}
+                <div class="modal-body p-4">
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold small">Assigned Staff / Technician</label>
+                        {{ assign_form.assigned_to }}
+                    </div>
+
+                    <div class="row g-3 mb-3">
+                        <div class="col-sm-6">
+                            <label class="form-label fw-semibold small">Triage Priority</label>
+                            {{ assign_form.priority }}
+                        </div>
+                        <div class="col-sm-6">
+                            <label class="form-label fw-semibold small">Status</label>
+                            {{ assign_form.status }}
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold small">Internal Management / Triage Note</label>
+                        {{ assign_form.comment }}
+                    </div>
+                </div>
+                <div class="modal-footer bg-light">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save Assignment</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+{% endblock %}

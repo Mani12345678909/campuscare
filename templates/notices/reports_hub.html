@@ -1,0 +1,122 @@
+{% extends 'base.html' %}
+
+{% block title %}Operational Reports & CSV Exports - CampusCare{% endblock %}
+
+{% block content %}
+<div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
+    <div>
+        <h3 class="fw-bold mb-1"><i class="bi bi-file-earmark-bar-graph text-primary me-2"></i>Institutional Reports & Data Exports</h3>
+        <p class="text-muted small mb-0">Download verified institutional data in CSV format for administrative auditing, accreditation, and department analysis.</p>
+    </div>
+</div>
+
+<!-- 3 Main Export Cards -->
+<div class="row g-4 mb-5">
+    <!-- Report 1: Maintenance & Room Faults -->
+    <div class="col-md-4">
+        <div class="card h-100 shadow-sm border p-4 d-flex flex-column">
+            <div class="d-flex align-items-center gap-3 mb-3">
+                <div class="kpi-icon-box">
+                    <i class="bi bi-tools"></i>
+                </div>
+                <div>
+                    <h5 class="fw-bold mb-0">Maintenance & Room Faults</h5>
+                    <span class="small text-muted">{{ total_tickets }} lifetime tickets</span>
+                </div>
+            </div>
+            <p class="small text-secondary mb-4 flex-grow-1">
+                Comprehensive log of all facility tickets, equipment tags, categories, assigned technicians, response times, and resolution notes.
+            </p>
+            <a href="{% url 'notices:export_maintenance_csv' %}" class="btn btn-primary fw-medium w-100">
+                <i class="bi bi-download me-1"></i> Export Maintenance CSV
+            </a>
+        </div>
+    </div>
+
+    <!-- Report 2: Student Attendance Summary -->
+    <div class="col-md-4">
+        <div class="card h-100 shadow-sm border p-4 d-flex flex-column">
+            <div class="d-flex align-items-center gap-3 mb-3">
+                <div class="kpi-icon-box">
+                    <i class="bi bi-person-check"></i>
+                </div>
+                <div>
+                    <h5 class="fw-bold mb-0">Student Attendance Summary</h5>
+                    <span class="small text-muted">{{ total_attendance_sessions }} verified sessions</span>
+                </div>
+            </div>
+            <p class="small text-secondary mb-4 flex-grow-1">
+                Student-wise and subject-wise aggregate attendance records, session attendance counts, percentage calculations, and &lt;75% threshold flags.
+            </p>
+            <a href="{% url 'notices:export_attendance_csv' %}" class="btn btn-primary fw-medium w-100">
+                <i class="bi bi-download me-1"></i> Export Attendance CSV
+            </a>
+        </div>
+    </div>
+
+    <!-- Report 3: Teacher Activity Log -->
+    <div class="col-md-4">
+        <div class="card h-100 shadow-sm border p-4 d-flex flex-column">
+            <div class="d-flex align-items-center gap-3 mb-3">
+                <div class="kpi-icon-box">
+                    <i class="bi bi-journal-check"></i>
+                </div>
+                <div>
+                    <h5 class="fw-bold mb-0">Teacher Activity Logs</h5>
+                    <span class="small text-muted">{{ total_activity_logs }} logged lectures</span>
+                </div>
+            </div>
+            <p class="small text-secondary mb-4 flex-grow-1">
+                Daily syllabus delivery logs, conducted session statuses, classroom equipment remarks, and faculty lecture completion audit trail.
+            </p>
+            <a href="{% url 'notices:export_teacher_activity_csv' %}" class="btn btn-primary fw-medium w-100">
+                <i class="bi bi-download me-1"></i> Export Activity Logs CSV
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- Recurring Hotspots Table -->
+<div class="card shadow-sm border-0">
+    <div class="card-header bg-white py-3">
+        <h5 class="fw-bold mb-0"><i class="bi bi-building-exclamation text-danger me-2"></i>Campus Recurring Maintenance Hotspots</h5>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light small">
+                    <tr>
+                        <th>Classroom / Facility</th>
+                        <th>Building Name</th>
+                        <th>Floor</th>
+                        <th>Room Type</th>
+                        <th class="text-end">Lifetime Recorded Faults</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for rm in top_recurring_rooms %}
+                    <tr>
+                        <td>
+                            <a href="{% url 'facilities:room_detail' rm.id %}" class="fw-bold text-decoration-none">
+                                {{ rm.building_code }} {{ rm.room_number }}
+                            </a>
+                        </td>
+                        <td>{{ rm.building_name }}</td>
+                        <td>{{ rm.floor }}</td>
+                        <td><span class="badge bg-light text-dark border">{{ rm.room_type }}</span></td>
+                        <td class="text-end">
+                            <span class="badge bg-danger rounded-pill px-3 py-1 fs-6">{{ rm.ticket_count }} issues</span>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="5" class="text-center py-4 text-muted">No maintenance hotspots recorded.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

@@ -1,0 +1,75 @@
+{% extends 'base.html' %}
+
+{% block title %}Welcome Onboarding - CampusCare{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center py-4">
+    <div class="col-md-7 col-lg-6">
+        <div class="card shadow border-0">
+            <div class="card-header bg-dark text-white text-center py-4">
+                <i class="bi bi-mortarboard-fill fs-1 d-block mb-2 text-danger"></i>
+                <h4 class="fw-bold mb-1">One-Time Campus Profile Setup</h4>
+                <p class="small text-light text-opacity-75 mb-0">Complete your academic identifiers to tailor your dashboard.</p>
+            </div>
+            <div class="card-body p-4 p-md-5">
+                <div class="alert alert-light border small mb-4">
+                    <strong>Logged in as:</strong> {{ user.username }} ({{ user.email }})<br>
+                    <strong>Assigned Role:</strong> <span class="badge bg-secondary">{{ user.get_role_display }}</span>
+                </div>
+
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="row g-3 mb-3">
+                        <div class="col-sm-6">
+                            <label class="form-label fw-semibold small">First Name</label>
+                            {{ form.first_name }}
+                        </div>
+                        <div class="col-sm-6">
+                            <label class="form-label fw-semibold small">Last Name</label>
+                            {{ form.last_name }}
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold small">Academic Department / Division <span class="text-danger">*</span></label>
+                        {{ form.department }}
+                        <div class="form-text small">e.g. Computer Science & Engineering, Electrical, Physics</div>
+                        {{ form.department.errors }}
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold small">
+                            {% if user.is_student %}Student Roll Number / Registration ID{% else %}Employee / Staff ID{% endif %} <span class="text-danger">*</span>
+                        </label>
+                        {{ form.identifier_number }}
+                        <div class="form-text small">e.g. 21CS042 or EMP-8821</div>
+                        {{ form.identifier_number.errors }}
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold small">
+                            {% if user.is_student %}Class Year & Section{% else %}Assigned Office / Campus Block{% endif %} <span class="text-danger">*</span>
+                        </label>
+                        {{ form.year_or_block }}
+                        <div class="form-text small">e.g. 3rd Year / Section A or Ramanujan Science Block</div>
+                        {{ form.year_or_block.errors }}
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="form-label fw-semibold small">Contact Phone Number</label>
+                        {{ form.phone_number }}
+                        {{ form.phone_number.errors }}
+                    </div>
+
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-primary btn-lg fw-medium">
+                            <i class="bi bi-check-lg me-1"></i> Save Profile & Launch Dashboard
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

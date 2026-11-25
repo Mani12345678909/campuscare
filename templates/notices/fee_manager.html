@@ -1,0 +1,115 @@
+{% extends 'base.html' %}
+
+{% block title %}Fee Notice & Dues Management - CampusCare{% endblock %}
+
+{% block content %}
+<div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
+    <div>
+        <h3 class="fw-bold mb-1"><i class="bi bi-wallet2 text-primary me-2"></i>Institutional Fee Tracking & Dues</h3>
+        <p class="text-muted small mb-0">Monitor campus-wide student fees, scholarship waivers, and overdue collections.
+        </p>
+    </div>
+    {% if user.is_manager or user.is_admin_role %}
+    <a href="{% url 'notices:fee_create' %}" class="btn btn-primary">
+        <i class="bi bi-plus-circle me-1"></i> Issue Student Fee Notice
+    </a>
+    {% endif %}
+</div>
+
+<!-- KPI Cards -->
+<div class="row g-3 mb-4">
+    <div class="col-md-4">
+        <div class="card kpi-card success p-3">
+            <div class="text-muted small text-uppercase fw-semibold">Total Collected</div>
+            <div class="fs-2 fw-bold text-dark mt-1">${{ total_collected }}</div>
+            <div class="small text-muted mt-1">Paid & settled fees</div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card kpi-card warning p-3">
+            <div class="text-muted small text-uppercase fw-semibold">Pending Dues</div>
+            <div class="fs-2 fw-bold text-dark mt-1">${{ total_pending }}</div>
+            <div class="small text-muted mt-1">Awaiting due date or processing</div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card kpi-card critical p-3">
+            <div class="text-muted small text-uppercase fw-semibold">Overdue Dues</div>
+            <div class="fs-2 fw-bold text-danger mt-1">${{ total_overdue }}</div>
+            <div class="small text-muted mt-1">Past deadline requiring notice</div>
+        </div>
+    </div>
+</div>
+
+<!-- Filter Bar -->
+<div class="d-flex flex-wrap gap-2 mb-3">
+    <a href="{% url 'notices:fee_tracker' %}"
+        class="btn btn-sm {% if not status_filter %}btn-dark{% else %}btn-outline-secondary{% endif %}">All Fees</a>
+    {% for s_val, s_label in statuses %}
+    <a href="{% url 'notices:fee_tracker' %}?status={{ s_val }}"
+        class="btn btn-sm {% if status_filter == s_val %}btn-dark{% else %}btn-outline-secondary{% endif %}">
+        {{ s_label }}
+    </a>
+    {% endfor %}
+</div>
+
+<!-- Table -->
+<div class="card shadow-sm border-0">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light small">
+                    <tr>
+                        <th>Roll / ID</th>
+                        <th>Student Name</th>
+                        <th>Academic Term</th>
+                        <th>Category</th>
+                        <th>Amount</th>
+                        <th>Due Date</th>
+                        <th>Status</th>
+                        <th>Paid Date / Receipt</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for fee in records %}
+                    <tr>
+                        <td><code>{{ fee.student.identifier_number|default:fee.student.username }}</code></td>
+                        <td class="fw-semibold text-dark">{{ fee.student.get_full_name|default:fee.student.username }}
+                        </td>
+                        <td class="small">{{ fee.academic_term }}</td>
+                        <td class="small">{{ fee.fee_category }}</td>
+                        <td class="fw-bold">${{ fee.amount }}</td>
+                        <td class="small">{{ fee.due_date|date:"M d, Y" }}</td>
+                        <td>
+                            {% if fee.status == 'PAID' %}
+                            <span class="badge badge-rwb-notice">Paid</span>
+                            {% elif fee.status == 'OVERDUE' %}
+                            <span class="badge badge-rwb-alert">Overdue</span>
+                            {% elif fee.status == 'SCHOLARSHIP' %}
+                            <span class="badge bg-dark text-white">Scholarship</span>
+                            {% else %}
+                            <span class="badge badge-rwb-ticket">Pending</span>
+                            {% endif %}
+                        </td>
+                        <td class="small">
+                            {% if fee.paid_date %}
+                            <div>{{ fee.paid_date|date:"M d, Y" }}</div>
+                            <code>{{ fee.receipt_number|default:"" }}</code>
+                            {% else %}
+                            <span class="text-muted">-</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="8" class="text-center py-5 text-muted">
+                            No student fee records found matching this status.
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,154 @@
+{% extends 'base.html' %}
+
+{% block title %}Welcome - CampusCare Classroom Maintenance & Academic Operations{% endblock %}
+
+{% block content %}
+<div class="row align-items-center py-4">
+    <div class="col-lg-7">
+        <span class="badge badge-rwb-alert px-3 py-2 fw-medium mb-3">
+            <i class="bi bi-shield-check me-1"></i> University Facilities & Academic Operations Directorate
+        </span>
+        <h1 class="display-4 fw-bold text-dark lh-tight mb-3">
+            Unified Classroom Maintenance & Academic Operations
+        </h1>
+        <p class="lead text-muted mb-4">
+            An institutional operations platform uniting students, professors, technician crews, and facility
+            executives.
+            Features college-domain email verification, first-login 2FA, class timetables, daily lecture activity logs,
+            attendance percentage tracking with threshold alerts, exam readiness validation, and campus watch feeds.
+        </p>
+        <div class="d-flex flex-wrap gap-3 mb-5">
+            <a href="{% url 'accounts:login' %}" class="btn btn-primary btn-lg px-4 shadow-sm">
+                <i class="bi bi-box-arrow-in-right me-2"></i>Sign In with College ID
+            </a>
+            <a href="{% url 'accounts:register' %}" class="btn btn-outline-secondary btn-lg px-4">
+                <i class="bi bi-person-plus me-2"></i>Register (@college.edu)
+            </a>
+        </div>
+
+        <div class="row g-4 text-start">
+            <div class="col-sm-6">
+                <div class="d-flex align-items-start gap-3">
+                    <div class="kpi-icon-box kpi-icon-black">
+                        <i class="bi bi-shield-lock-fill fs-4"></i>
+                    </div>
+                    <div>
+                        <h6 class="fw-bold mb-1">College Email & 2FA Security</h6>
+                        <p class="text-muted small mb-0">Restricted to approved college domains with time-limited
+                            6-digit OTP verification.</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-sm-6">
+                <div class="d-flex align-items-start gap-3">
+                    <div class="kpi-icon-box kpi-icon-red">
+                        <i class="bi bi-tools fs-4"></i>
+                    </div>
+                    <div>
+                        <h6 class="fw-bold mb-1">Classroom Fault Reporting</h6>
+                        <p class="text-muted small mb-0">Equipment asset linking, live duplicate warning banner, and
+                            full audit timelines.</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-sm-6">
+                <div class="d-flex align-items-start gap-3">
+                    <div class="kpi-icon-box kpi-icon-outline">
+                        <i class="bi bi-calendar-week fs-4"></i>
+                    </div>
+                    <div>
+                        <h6 class="fw-bold mb-1">Timetables & Attendance</h6>
+                        <p class="text-muted small mb-0">Weekly period matrices, teacher lecture logs, and subject
+                            attendance (&lt;75% alert).</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-sm-6">
+                <div class="d-flex align-items-start gap-3">
+                    <div class="kpi-icon-box kpi-icon-red">
+                        <i class="bi bi-broadcast fs-4"></i>
+                    </div>
+                    <div>
+                        <h6 class="fw-bold mb-1">Live Campus Watch & CSV Reports</h6>
+                        <p class="text-muted small mb-0">Unified operations feed, exam room readiness checks, and
+                            1-click CSV exports.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- University Operations & Portal Overview Card -->
+    <div class="col-lg-5 mt-5 mt-lg-0">
+        <div class="card shadow-lg border-0 overflow-hidden">
+            <div class="card-header bg-dark text-white p-4 border-bottom border-light border-opacity-10">
+                <div class="d-flex align-items-center justify-content-between mb-2">
+                    <span class="badge badge-rwb-alert px-3 py-1"><i class="bi bi-shield-check me-1"></i>Institutional
+                        Access</span>
+                    <span class="text-white-50 small"><i class="bi bi-lock-fill me-1"></i>2FA Active</span>
+                </div>
+                <h5 class="fw-bold mb-0 text-white">CampusCare Unified Portal</h5>
+                <p class="text-light text-opacity-75 small mb-0 mt-1">Dedicated role-tailored workspaces across campus
+                </p>
+            </div>
+            <div class="card-body p-4">
+                <div class="list-group shadow-sm mb-4">
+                    <div class="list-group-item list-group-item-action d-flex align-items-center gap-3 py-3">
+                        <div class="kpi-icon-box kpi-icon-black">
+                            <i class="bi bi-mortarboard-fill fs-5"></i>
+                        </div>
+                        <div>
+                            <div class="fw-bold text-dark">Student Academic Portal</div>
+                            <div class="text-muted small">Course schedules, attendance monitoring, and fee ledgers.
+                            </div>
+                        </div>
+                    </div>
+                    <div class="list-group-item list-group-item-action d-flex align-items-center gap-3 py-3">
+                        <div class="kpi-icon-box kpi-icon-outline">
+                            <i class="bi bi-person-workspace fs-5"></i>
+                        </div>
+                        <div>
+                            <div class="fw-bold text-dark">Faculty Operations Desk</div>
+                            <div class="text-muted small">Daily lecture activity logs, attendance marking, and syllabus
+                                tracker.</div>
+                        </div>
+                    </div>
+                    <div class="list-group-item list-group-item-action d-flex align-items-center gap-3 py-3">
+                        <div class="kpi-icon-box kpi-icon-red">
+                            <i class="bi bi-tools fs-5"></i>
+                        </div>
+                        <div>
+                            <div class="fw-bold text-dark">Facilities & Maintenance Crew</div>
+                            <div class="text-muted small">Equipment triage, dispatch queues, and repair status
+                                timelines.</div>
+                        </div>
+                    </div>
+                    <div class="list-group-item list-group-item-action d-flex align-items-center gap-3 py-3">
+                        <div class="kpi-icon-box kpi-icon-black">
+                            <i class="bi bi-speedometer fs-5"></i>
+                        </div>
+                        <div>
+                            <div class="fw-bold text-dark">Administrative Directorate</div>
+                            <div class="text-muted small">Executive KPIs, exam readiness, and institutional CSV reports.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="d-grid gap-2">
+                    <a href="{% url 'accounts:login' %}" class="btn btn-primary fw-semibold py-2 shadow-sm">
+                        <i class="bi bi-box-arrow-in-right me-1"></i> Sign In to Your Portal
+                    </a>
+                    <a href="{% url 'accounts:register' %}" class="btn btn-outline-secondary small py-2">
+                        <i class="bi bi-person-plus me-1"></i> Register with Approved College Email
+                    </a>
+                </div>
+
+                <div class="text-center small text-muted mt-3">
+                    <i class="bi bi-shield-lock me-1"></i> Authorized college domain required for self-registration.
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

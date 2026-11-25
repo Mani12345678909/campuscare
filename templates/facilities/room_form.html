@@ -1,0 +1,77 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ title }} - CampusCare{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8 col-lg-7">
+        <div class="card shadow-sm border-0">
+            <div class="card-header bg-white py-3 border-bottom">
+                <h4 class="fw-bold mb-0"><i class="bi bi-building-add text-primary me-2"></i>{{ title }}</h4>
+                <p class="text-muted small mb-0">Register a classroom, laboratory, or lecture hall in the facility catalog.</p>
+            </div>
+            <div class="card-body p-4">
+                <form method="post">
+                    {% csrf_token %}
+
+                    {% if form.non_field_errors %}
+                    <div class="alert alert-danger py-2 small">
+                        {% for err in form.non_field_errors %}{{ err }}<br>{% endfor %}
+                    </div>
+                    {% endif %}
+
+                    <div class="row g-3 mb-3">
+                        <div class="col-sm-8">
+                            <label class="form-label fw-semibold small">Building Name <span class="text-danger">*</span></label>
+                            {{ form.building_name }}
+                            {{ form.building_name.errors }}
+                        </div>
+                        <div class="col-sm-4">
+                            <label class="form-label fw-semibold small">Building Code <span class="text-danger">*</span></label>
+                            {{ form.building_code }}
+                            {{ form.building_code.errors }}
+                        </div>
+                    </div>
+
+                    <div class="row g-3 mb-3">
+                        <div class="col-sm-4">
+                            <label class="form-label fw-semibold small">Floor <span class="text-danger">*</span></label>
+                            {{ form.floor }}
+                            {{ form.floor.errors }}
+                        </div>
+                        <div class="col-sm-4">
+                            <label class="form-label fw-semibold small">Room Number <span class="text-danger">*</span></label>
+                            {{ form.room_number }}
+                            {{ form.room_number.errors }}
+                        </div>
+                        <div class="col-sm-4">
+                            <label class="form-label fw-semibold small">Seating Capacity</label>
+                            {{ form.capacity }}
+                            {{ form.capacity.errors }}
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold small">Room Type</label>
+                        {{ form.room_type }}
+                        {{ form.room_type.errors }}
+                    </div>
+
+                    <div class="mb-4 form-check">
+                        {{ form.is_active }}
+                        <label class="form-check-label small fw-semibold">Active Facility (Available for scheduling & tickets)</label>
+                    </div>
+
+                    <div class="d-flex justify-content-between">
+                        <a href="{% url 'facilities:room_list' %}" class="btn btn-outline-secondary">Cancel</a>
+                        <button type="submit" class="btn btn-primary px-4">
+                            <i class="bi bi-save me-1"></i> Save Room
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

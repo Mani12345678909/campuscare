@@ -1,0 +1,107 @@
+{% extends 'base.html' %}
+
+{% block title %}Exam Schedules & Room Readiness - CampusCare{% endblock %}
+
+{% block content %}
+<div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
+    <div>
+        <h3 class="fw-bold mb-1"><i class="bi bi-mortarboard text-primary me-2"></i>Exam Schedules & Room Readiness</h3>
+        <p class="text-muted small mb-0">Examination venues, invigilator assignments, and facility readiness
+            verifications.</p>
+    </div>
+    {% if user.is_manager or user.is_admin_role %}
+    <a href="{% url 'academics:exam_create' %}" class="btn btn-primary">
+        <i class="bi bi-plus-circle me-1"></i> Schedule Exam
+    </a>
+    {% endif %}
+</div>
+
+<div class="card shadow-sm border-0">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light small">
+                    <tr>
+                        <th>Date & Time</th>
+                        <th>Examination</th>
+                        <th>Department & Section</th>
+                        <th>Allocated Room</th>
+                        <th>Invigilator</th>
+                        <th>Room Facility Readiness</th>
+                        {% if user.is_faculty or user.is_manager %}
+                        <th class="text-end">Action</th>
+                        {% endif %}
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for exam in exams %}
+                    <tr>
+                        <td>
+                            <div class="fw-bold text-dark">{{ exam.exam_date|date:"M d, Y" }}</div>
+                            <div class="small text-muted">{{ exam.start_time|time:"H:i" }} - {{ exam.end_time|time:"H:i"
+                                }}</div>
+                        </td>
+                        <td>
+                            <span class="badge bg-dark">{{ exam.subject_code }}</span>
+                            <div class="fw-medium text-dark">{{ exam.exam_name }}</div>
+                            <div class="small text-muted">{{ exam.subject_name }}</div>
+                        </td>
+                        <td class="small">
+                            <div>{{ exam.department }}</div>
+                            <div class="text-muted">{{ exam.year }} &bull; {{ exam.section }}</div>
+                        </td>
+                        <td>
+                            <a href="{% url 'facilities:room_detail' exam.room.id %}"
+                                class="fw-bold text-decoration-none text-dark">
+                                {{ exam.room.building_code }} {{ exam.room.room_number }}
+                            </a>
+                            <div class="small text-muted">{{ exam.room.building_name }} (Cap: {{ exam.room.capacity }})
+                            </div>
+                        </td>
+                        <td class="small">
+                            <i class="bi bi-person me-1"></i>{% if exam.invigilator %}{{
+                            exam.invigilator.get_full_name|default:exam.invigilator.username }}{% else %}TBA{% endif %}
+                        </td>
+                        <td>
+                            {% if exam.has_room_critical_issues %}
+                            <div class="badge badge-rwb-alert p-2 text-start d-inline-block">
+                                <i class="bi bi-exclamation-triangle me-1"></i> Active Faults in Hall!
+                            </div>
+                            <div class="small text-danger fw-semibold mt-1">Review active maintenance before exam</div>
+                            {% elif exam.room_readiness_checked %}
+                            <span class="badge badge-rwb-notice p-2">
+                                <i class="bi bi-check2 me-1"></i> Verified Ready
+                            </span>
+                            {% else %}
+                            <span class="badge badge-rwb-ticket p-2">
+                                <i class="bi bi-clock me-1"></i> Pending Verification
+                            </span>
+                            {% endif %}
+                        </td>
+                        {% if user.is_faculty or user.is_manager %}
+                        <td class="text-end">
+                            <form method="post" action="{% url 'academics:exam_toggle_readiness' exam.id %}"
+                                class="d-inline">
+                                {% csrf_token %}
+                                <button type="submit"
+                                    class="btn btn-xs {% if exam.room_readiness_checked %}btn-outline-secondary{% else %}btn-outline-success{% endif %}">
+                                    {% if exam.room_readiness_checked %}Mark Pending{% else %}Verify Ready{% endif %}
+                                </button>
+                            </form>
+                        </td>
+                        {% endif %}
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="7" class="text-center py-5 text-muted">
+                            <i class="bi bi-calendar-x fs-2 d-block mb-2"></i>
+                            No upcoming examinations scheduled.
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

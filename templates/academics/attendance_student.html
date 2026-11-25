@@ -1,0 +1,128 @@
+{% extends 'base.html' %}
+
+{% block title %}My Attendance - CampusCare{% endblock %}
+
+{% block content %}
+<div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
+    <div>
+        <h3 class="fw-bold mb-1"><i class="bi bi-person-check text-primary me-2"></i>My Academic Attendance</h3>
+        <p class="text-muted small mb-0">Track your subject-wise attendance percentage and semester minimum thresholds (75%).</p>
+    </div>
+</div>
+
+<!-- Overall Standing Alert / Banner -->
+{% if is_low_attendance %}
+<div class="alert alert-danger shadow-sm d-flex align-items-center gap-3 mb-4" role="alert">
+    <i class="bi bi-exclamation-triangle-fill fs-2 text-danger"></i>
+    <div>
+        <h5 class="alert-heading fw-bold mb-1">Low Attendance Warning (&lt;75%)</h5>
+        <p class="mb-0 small">
+            Your aggregate attendance is currently <strong>{{ overall_pct }}%</strong>. College regulations require a minimum of 75% attendance to qualify for semester examinations. Please consult your academic advisor.
+        </p>
+    </div>
+</div>
+{% else %}
+<div class="alert alert-success shadow-sm d-flex align-items-center gap-3 mb-4" role="alert">
+    <i class="bi bi-check-circle-fill fs-2 text-success"></i>
+    <div>
+        <h5 class="alert-heading fw-bold mb-1">Good Standing ({{ overall_pct }}%)</h5>
+        <p class="mb-0 small">Your overall attendance meets institutional requirements for semester examinations.</p>
+    </div>
+</div>
+{% endif %}
+
+<!-- Subject-Wise Progress Cards -->
+<div class="row g-3 mb-4">
+    {% for stat in subject_stats %}
+    <div class="col-md-6 col-lg-4">
+        <div class="card h-100 shadow-sm border {% if stat.is_low %}border-danger{% endif %}">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-start mb-2">
+                    <span class="badge bg-dark">{{ stat.subject_code }}</span>
+                    <span class="badge {% if stat.is_low %}bg-danger{% else %}bg-success{% endif %} fs-6">
+                        {{ stat.percentage }}%
+                    </span>
+                </div>
+                <h5 class="card-title fw-bold text-dark mb-1">{{ stat.subject_name }}</h5>
+                <div class="small text-muted mb-3">
+                    Attended: <strong>{{ stat.attended }}</strong> / {{ stat.total }} sessions
+                </div>
+
+                <div class="progress mb-2" style="height: 10px;">
+                    <div class="progress-bar {% if stat.is_low %}bg-danger{% else %}bg-success{% endif %}"
+                         role="progressbar"
+                         style="width: {{ stat.percentage }}%;">
+                    </div>
+                </div>
+
+                {% if stat.is_low %}
+                <div class="text-danger small fw-semibold">
+                    <i class="bi bi-exclamation-circle me-1"></i> Below 75% Threshold
+                </div>
+                {% else %}
+                <div class="text-success small fw-medium">
+                    <i class="bi bi-check-lg me-1"></i> In Good Standing
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    {% empty %}
+    <div class="col-12">
+        <div class="card text-center py-5 text-muted">
+            <i class="bi bi-calendar-x fs-2 d-block mb-2"></i>
+            No attendance records logged for your profile yet.
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<!-- Recent Session Records -->
+{% if recent_records %}
+<div class="card shadow-sm border-0">
+    <div class="card-header bg-white py-3">
+        <h6 class="fw-bold mb-0"><i class="bi bi-clock-history text-secondary me-2"></i>Recent Attendance Logs</h6>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light small">
+                    <tr>
+                        <th>Date</th>
+                        <th>Subject</th>
+                        <th>Conducted By</th>
+                        <th>Status</th>
+                        <th>Remarks</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for r in recent_records %}
+                    <tr>
+                        <td class="fw-semibold">{{ r.session.date|date:"M d, Y" }}</td>
+                        <td>
+                            <span class="badge bg-secondary me-1">{{ r.session.timetable_slot.subject_code }}</span>
+                            {{ r.session.timetable_slot.subject_name }}
+                        </td>
+                        <td class="small">{{ r.session.conducted_by.get_full_name|default:r.session.conducted_by.username }}</td>
+                        <td>
+                            {% if r.status == 'PRESENT' %}
+                            <span class="badge badge-rwb-notice">Present</span>
+                            {% elif r.status == 'ON_DUTY' %}
+                            <span class="badge bg-dark text-white">On Duty</span>
+                            {% elif r.status == 'LATE' %}
+                            <span class="badge badge-rwb-ticket">Late</span>
+                            {% else %}
+                            <span class="badge badge-rwb-alert">Absent</span>
+                            {% endif %}
+                        </td>
+                        <td class="small text-muted">{{ r.remarks|default:"-" }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endblock %}
+

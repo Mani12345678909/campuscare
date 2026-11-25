@@ -1,0 +1,93 @@
+{% extends 'base.html' %}
+
+{% block title %}Add Timetable Slot - CampusCare{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card shadow-sm border-0">
+            <div class="card-header bg-white py-3">
+                <h4 class="fw-bold mb-0"><i class="bi bi-calendar-plus text-primary me-2"></i>Schedule Timetable Slot</h4>
+            </div>
+            <div class="card-body p-4">
+                <form method="post">
+                    {% csrf_token %}
+
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold small">Department <span class="text-danger">*</span></label>
+                            {{ form.department }}
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label fw-semibold small">Year <span class="text-danger">*</span></label>
+                            {{ form.year }}
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label fw-semibold small">Section <span class="text-danger">*</span></label>
+                            {{ form.section }}
+                        </div>
+                    </div>
+
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold small">Day of Week <span class="text-danger">*</span></label>
+                            {{ form.day_of_week }}
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label fw-semibold small">Period #</label>
+                            {{ form.period_number }}
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label fw-semibold small">Start Time</label>
+                            {{ form.start_time }}
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label fw-semibold small">End Time</label>
+                            {{ form.end_time }}
+                        </div>
+                    </div>
+
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-8">
+                            <label class="form-label fw-semibold small">Subject Name <span class="text-danger">*</span></label>
+                            {{ form.subject_name }}
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold small">Subject Code <span class="text-danger">*</span></label>
+                            {{ form.subject_code }}
+                        </div>
+                    </div>
+
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold small">Faculty Instructor</label>
+                            {{ form.faculty }}
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold small">Allocated Classroom / Lab <span class="text-danger">*</span></label>
+                            {{ form.room }}
+                        </div>
+                    </div>
+
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold small">Slot Status</label>
+                            {{ form.status }}
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold small">Notes / Instructions</label>
+                            {{ form.notes }}
+                        </div>
+                    </div>
+
+                    <div class="d-flex justify-content-between">
+                        <a href="{% url 'academics:timetable' %}" class="btn btn-outline-secondary">Cancel</a>
+                        <button type="submit" class="btn btn-primary px-4">Save Timetable Slot</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

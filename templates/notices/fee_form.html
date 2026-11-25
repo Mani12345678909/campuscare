@@ -1,0 +1,74 @@
+{% extends 'base.html' %}
+
+{% block title %}Issue Student Fee Notice - CampusCare{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-7">
+        <div class="card shadow-sm border-0">
+            <div class="card-header bg-white py-3">
+                <h4 class="fw-bold mb-0"><i class="bi bi-wallet2 text-primary me-2"></i>Issue Student Fee Notice</h4>
+            </div>
+            <div class="card-body p-4">
+                <form method="post">
+                    {% csrf_token %}
+
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold small">Student <span class="text-danger">*</span></label>
+                        {{ form.student }}
+                    </div>
+
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold small">Academic Term <span class="text-danger">*</span></label>
+                            {{ form.academic_term }}
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold small">Fee Category <span class="text-danger">*</span></label>
+                            {{ form.fee_category }}
+                        </div>
+                    </div>
+
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold small">Amount ($) <span class="text-danger">*</span></label>
+                            {{ form.amount }}
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold small">Due Date <span class="text-danger">*</span></label>
+                            {{ form.due_date }}
+                        </div>
+                    </div>
+
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold small">Status</label>
+                            {{ form.status }}
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold small">Paid Date (if already paid)</label>
+                            {{ form.paid_date }}
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold small">Receipt Number / Transaction Reference</label>
+                        {{ form.receipt_number }}
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="form-label fw-semibold small">Remarks / Scholarship Info</label>
+                        {{ form.remarks }}
+                    </div>
+
+                    <div class="d-flex justify-content-between">
+                        <a href="{% url 'notices:fee_tracker' %}" class="btn btn-outline-secondary">Cancel</a>
+                        <button type="submit" class="btn btn-primary px-4">Create Fee Record</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

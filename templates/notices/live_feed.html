@@ -1,0 +1,72 @@
+{% extends 'base.html' %}
+
+{% block title %}Campus Watch - Live Activity Feed - CampusCare{% endblock %}
+
+{% block content %}
+<div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
+    <div>
+        <h3 class="fw-bold mb-1"><i class="bi bi-broadcast live-feed-pulsing-icon me-2"></i>Campus Watch & Live Operations Feed</h3>
+        <p class="text-muted small mb-0">Unified live stream of maintenance repairs, room readiness alerts, timetable substitutions, and announcements.</p>
+    </div>
+</div>
+
+<!-- Category Filters -->
+<div class="d-flex flex-wrap gap-2 mb-4">
+    <a href="{% url 'notices:live_feed' %}?cat=ALL" class="btn btn-sm {% if category_filter == 'ALL' %}btn-dark{% else %}btn-outline-secondary{% endif %}">
+        <i class="bi bi-collection me-1"></i> All Activities
+    </a>
+    <a href="{% url 'notices:live_feed' %}?cat=MAINTENANCE" class="btn btn-sm {% if category_filter == 'MAINTENANCE' %}btn-dark{% else %}btn-outline-secondary{% endif %}">
+        <i class="bi bi-wrench me-1"></i> Maintenance & Facilities
+    </a>
+    <a href="{% url 'notices:live_feed' %}?cat=ACADEMICS" class="btn btn-sm {% if category_filter == 'ACADEMICS' %}btn-dark{% else %}btn-outline-secondary{% endif %}">
+        <i class="bi bi-calendar-event me-1"></i> Timetable Shifts
+    </a>
+    <a href="{% url 'notices:live_feed' %}?cat=EXAMS" class="btn btn-sm {% if category_filter == 'EXAMS' %}btn-dark{% else %}btn-outline-secondary{% endif %}">
+        <i class="bi bi-mortarboard me-1"></i> Exam Venues
+    </a>
+    <a href="{% url 'notices:live_feed' %}?cat=EVENTS" class="btn btn-sm {% if category_filter == 'EVENTS' %}btn-dark{% else %}btn-outline-secondary{% endif %}">
+        <i class="bi bi-megaphone me-1"></i> Notices & Events
+    </a>
+</div>
+
+<!-- Live Timeline Stream -->
+<div class="row justify-content-center">
+    <div class="col-lg-9">
+        <div class="card shadow-sm border-0">
+            <div class="card-body p-4">
+                <div class="timeline-container">
+                    {% for item in feed_items %}
+                    <div class="timeline-item">
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <span class="badge {{ item.badge_class }}">
+                                <i class="bi {{ item.icon }} me-1"></i>{{ item.category }}
+                            </span>
+                            <span class="small text-muted">{{ item.timestamp|timesince }} ago</span>
+                        </div>
+                        <h6 class="fw-bold text-dark mb-1">
+                            {% if item.link %}
+                            <a href="{{ item.link }}" class="text-decoration-none text-dark">
+                                {{ item.title }}
+                            </a>
+                            {% else %}
+                            {{ item.title }}
+                            {% endif %}
+                        </h6>
+                        <div class="small text-muted mb-2">{{ item.meta|safe }}</div>
+                        <div class="p-3 bg-light rounded-3 border small text-secondary">
+                            {{ item.body|linebreaksbr }}
+                        </div>
+                    </div>
+                    {% empty %}
+                    <div class="text-center py-5 text-muted">
+                        <i class="bi bi-broadcast-pin fs-2 d-block mb-2"></i>
+                        No operational events logged for this category.
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

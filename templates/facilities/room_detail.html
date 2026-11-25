@@ -1,0 +1,146 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ room.building_code }} {{ room.room_number }} - CampusCare{% endblock %}
+
+{% block content %}
+<!-- Room Header -->
+<div class="card mb-4 border-0 shadow-sm">
+    <div class="card-body p-4 bg-white rounded-3">
+        <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
+            <div>
+                <div class="d-flex align-items-center gap-2 mb-2">
+                    <span class="badge bg-dark px-3 py-1 fs-6">{{ room.building_code }} {{ room.room_number }}</span>
+                    <span class="badge badge-rwb-ticket">{{ room.room_type }}</span>
+                    {% if room.is_active %}
+                    <span class="badge badge-rwb-notice">Active Facility</span>
+                    {% else %}
+                    <span class="badge badge-rwb-alert">Inactive</span>
+                    {% endif %}
+                </div>
+                <h2 class="fw-bold text-dark mb-1">{{ room.building_name }}</h2>
+                <div class="text-muted small">
+                    <i class="bi bi-geo-alt me-1"></i>Floor: {{ room.floor }} &bull; 
+                    <i class="bi bi-people me-1"></i>Capacity: {{ room.capacity }} students/occupants
+                </div>
+            </div>
+            <div class="d-flex flex-wrap gap-2">
+                <a href="{% url 'tickets:ticket_create' %}?room={{ room.id }}" class="btn btn-danger fw-semibold">
+                    <i class="bi bi-plus-circle me-1"></i> Report Issue in this Room
+                </a>
+                {% if user.is_manager or user.is_admin_role %}
+                <a href="{% url 'facilities:asset_create' %}?room={{ room.id }}" class="btn btn-outline-primary">
+                    <i class="bi bi-plus-lg me-1"></i> Add Asset to Room
+                </a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4">
+    <!-- Assets in Room -->
+    <div class="col-lg-6">
+        <div class="card h-100">
+            <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+                <h5 class="fw-bold mb-0"><i class="bi bi-cpu text-primary me-2"></i>Installed Assets & Equipment</h5>
+                <span class="badge badge-rwb-ticket">{{ assets.count }} items</span>
+            </div>
+            <div class="card-body p-0">
+                {% if assets %}
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light small">
+                            <tr>
+                                <th>Asset Name</th>
+                                <th>Tag</th>
+                                <th>Category</th>
+                                <th>Status</th>
+                                <th class="text-end">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for asset in assets %}
+                            <tr>
+                                <td>
+                                    <div class="fw-semibold text-dark">{{ asset.name }}</div>
+                                    {% if asset.installed_on %}
+                                    <div class="small text-muted">Installed: {{ asset.installed_on|date:"M Y" }}</div>
+                                    {% endif %}
+                                </td>
+                                <td><code>{{ asset.asset_tag }}</code></td>
+                                <td><span class="badge bg-light text-dark border">{{ asset.get_category_display }}</span></td>
+                                <td>
+                                    {% if asset.status == 'OPERATIONAL' %}
+                                    <span class="badge badge-rwb-notice">Operational</span>
+                                    {% elif asset.status == 'NEEDS_REPAIR' %}
+                                    <span class="badge badge-rwb-ticket">Needs Repair</span>
+                                    {% else %}
+                                    <span class="badge badge-rwb-alert">Out of Service</span>
+                                    {% endif %}
+                                </td>
+                                <td class="text-end">
+                                    <a href="{% url 'tickets:ticket_create' %}?room={{ room.id }}&asset={{ asset.id }}" class="btn btn-xs btn-outline-danger" title="Report issue on this asset">
+                                        <i class="bi bi-exclamation-triangle"></i> Report
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="text-center py-5 text-muted">
+                    <i class="bi bi-inbox fs-2 mb-2 d-block"></i>
+                    No equipment or assets registered for this room yet.
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Maintenance History for this Room -->
+    <div class="col-lg-6">
+        <div class="card h-100">
+            <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+                <h5 class="fw-bold mb-0"><i class="bi bi-wrench text-dark me-2"></i>Maintenance Ticket History</h5>
+                <span class="badge badge-rwb-ticket">{{ tickets.count }} tickets</span>
+            </div>
+            <div class="card-body p-0">
+                {% if tickets %}
+                <div class="list-group list-group-flush">
+                    {% for ticket in tickets %}
+                    <div class="list-group-item p-3">
+                        <div class="d-flex justify-content-between align-items-start mb-1">
+                            <a href="{% url 'tickets:ticket_detail' ticket.ticket_code %}" class="fw-bold text-decoration-none">
+                                #{{ ticket.ticket_code }} - {{ ticket.title }}
+                            </a>
+                            <span class="badge badge-status-{{ ticket.status }}">{{ ticket.get_status_display }}</span>
+                        </div>
+                        <div class="small text-muted mb-2">
+                            {% if ticket.asset %}
+                            <span class="me-2"><i class="bi bi-cpu me-1"></i>{{ ticket.asset.name }}</span>
+                            {% endif %}
+                            <span class="badge badge-priority-{{ ticket.priority }}">{{ ticket.get_priority_display }}</span>
+                        </div>
+                        <div class="small text-muted d-flex justify-content-between align-items-center">
+                            <span>
+                                Reported by <strong>{{ ticket.reported_by.username }}</strong> &bull; 
+                                Assigned: <strong>{% if ticket.assigned_to %}{{ ticket.assigned_to.username }}{% else %}Unassigned{% endif %}</strong>
+                            </span>
+                            <span>{{ ticket.created_at|date:"M d, Y" }}</span>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="text-center py-5 text-muted">
+                    <i class="bi bi-check2-circle text-success fs-2 mb-2 d-block"></i>
+                    No maintenance issues reported for this room. Clean record!
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

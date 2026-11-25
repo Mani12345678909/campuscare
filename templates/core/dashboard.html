@@ -1,0 +1,658 @@
+{% extends 'base.html' %}
+
+{% block title %}Operations Dashboard - CampusCare{% endblock %}
+
+{% block content %}
+<div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
+    <div>
+        <h2 class="fw-bold mb-1">
+            Operations & Academic Dashboard
+        </h2>
+        <div class="text-muted small">
+            Signed in as <strong>{{ user.get_full_name|default:user.username }}</strong> &bull;
+            Role: <span class="badge {% if user.role == 'ADMIN' %}badge-role-admin{% elif user.role == 'MANAGER' %}badge-role-manager{% elif user.role == 'TECHNICIAN' %}badge-role-technician{% elif user.role == 'FACULTY' %}badge-role-faculty{% else %}badge-role-student{% endif %}">{{ user.get_role_display }}</span>
+            {% if user.identifier_number %}&bull; ID: <code>{{ user.identifier_number }}</code>{% endif %}
+            {% if user.department %}&bull; {{ user.department }}{% endif %}
+        </div>
+    </div>
+    <div class="d-flex flex-wrap gap-2">
+        <a href="{% url 'tickets:ticket_create' %}" class="btn btn-action-rwb">
+            <i class="bi bi-plus-circle me-1"></i> Report Maintenance Issue
+        </a>
+        <a href="{% url 'notices:live_feed' %}" class="btn btn-action-rwb">
+            <i class="bi bi-broadcast live-feed-pulsing-icon me-1"></i> Live Watch Feed
+        </a>
+    </div>
+</div>
+
+<!-- ================= RECENT UPDATES & FRESH DATA SPOTLIGHT ================= -->
+{% if spotlight_updates %}
+<div class="card glass-spotlight-card mb-4">
+    <div class="card-body p-3 p-md-4">
+        <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3">
+            <div class="d-flex align-items-center gap-2">
+                <span class="badge badge-rwb-alert px-2 py-1">LATEST UPDATES</span>
+                <h6 class="fw-bold mb-0 text-dark">Recently Added & Updated Campus Data</h6>
+            </div>
+            <a href="{% url 'notices:live_feed' %}" class="small text-decoration-none fw-semibold">
+                Explore Full Activity Feed &rarr;
+            </a>
+        </div>
+        <div class="row g-3">
+            {% for item in spotlight_updates %}
+            <div class="col-md-6 col-lg-3">
+                <div class="card h-100 glass-spotlight-subcard p-3 position-relative">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span class="badge {{ item.badge_class }}" style="font-size: 0.68rem;">{{ item.badge }}</span>
+                        <span class="text-muted" style="font-size: 0.72rem;">{{ item.timestamp|timesince }} ago</span>
+                    </div>
+                    <div class="fw-bold text-dark text-truncate mb-1" title="{{ item.title }}">
+                        <i class="bi {{ item.icon }} me-1 text-dark"></i>{{ item.title }}
+                    </div>
+                    <p class="text-muted small text-truncate mb-3" style="font-size: 0.8rem;" title="{{ item.summary }}">
+                        {{ item.summary }}
+                    </p>
+                    <a href="{{ item.url }}" class="btn btn-sm btn-outline-primary mt-auto fw-medium">
+                        {{ item.action_label }} &rarr;
+                    </a>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- ================= MANAGER / ADMIN OPERATIONAL KPI DASHBOARD ================= -->
+{% if user.is_manager or user.is_admin_role %}
+<div class="row g-3 mb-4">
+    <div class="col-sm-6 col-xl-3">
+        <div class="card kpi-card warning h-100 p-3">
+            <div class="d-flex justify-content-between align-items-start">
+                <div>
+                    <div class="text-muted small text-uppercase fw-semibold">Open Maintenance</div>
+                    <div class="fs-2 fw-bold text-dark mt-1">{{ total_open }}</div>
+                </div>
+                <div class="kpi-icon-box">
+                    <i class="bi bi-inboxes-fill"></i>
+                </div>
+            </div>
+            <div class="small text-muted mt-2">
+                <a href="{% url 'tickets:ticket_list' %}?status=SUBMITTED" class="text-dark fw-medium">
+                    Requires action or repair &rarr;
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-sm-6 col-xl-3">
+        <div class="card kpi-card critical h-100 p-3">
+            <div class="d-flex justify-content-between align-items-start">
+                <div>
+                    <div class="text-muted small text-uppercase fw-semibold">Critical / High Priority</div>
+                    <div class="fs-2 fw-bold text-danger mt-1">{{ critical_high_count }}</div>
+                </div>
+                <div class="kpi-icon-box">
+                    <i class="bi bi-exclamation-octagon-fill"></i>
+                </div>
+            </div>
+            <div class="small text-muted mt-2">
+                <a href="{% url 'tickets:ticket_list' %}?priority=CRITICAL" class="text-danger fw-semibold">
+                    View urgent issues &rarr;
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-sm-6 col-xl-3">
+        <div class="card kpi-card info h-100 p-3">
+            <div class="d-flex justify-content-between align-items-start">
+                <div>
+                    <div class="text-muted small text-uppercase fw-semibold">Campus Facilities</div>
+                    <div class="fs-2 fw-bold text-dark mt-1">{{ total_rooms }} <span class="fs-6 text-muted fw-normal">rooms</span></div>
+                </div>
+                <div class="kpi-icon-box">
+                    <i class="bi bi-building-check"></i>
+                </div>
+            </div>
+            <div class="small text-muted mt-2">
+                <span class="{% if rooms_maintenance > 0 %}text-danger fw-semibold{% else %}text-muted{% endif %}">
+                    {{ rooms_maintenance }} hall(s) under maintenance
+                </span>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-sm-6 col-xl-3">
+        <div class="card kpi-card success h-100 p-3">
+            <div class="d-flex justify-content-between align-items-start">
+                <div>
+                    <div class="text-muted small text-uppercase fw-semibold">Pending Student Fees</div>
+                    <div class="fs-2 fw-bold text-dark mt-1">${{ total_pending_fees }}</div>
+                </div>
+                <div class="kpi-icon-box">
+                    <i class="bi bi-wallet2"></i>
+                </div>
+            </div>
+            <div class="small text-muted mt-2">
+                <a href="{% url 'notices:fee_tracker' %}" class="text-dark fw-medium">
+                    Review fee dues ledger &rarr;
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4 mb-4">
+    <!-- Category Breakdown & Hotspots -->
+    <div class="col-lg-6">
+        <div class="card h-100">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span><i class="bi bi-pie-chart-fill text-primary me-2"></i>Tickets by Category</span>
+                <span class="badge bg-light text-dark border">Distribution</span>
+            </div>
+            <div class="card-body">
+                {% if category_data %}
+                <div class="d-flex flex-column gap-3">
+                    {% for cat in category_data %}
+                    <div>
+                        <div class="d-flex justify-content-between small fw-medium mb-1">
+                            <span>{{ cat.category_name }}</span>
+                            <span class="badge badge-rwb-ticket">{{ cat.count }}</span>
+                        </div>
+                        <div class="progress" style="height: 8px;">
+                            <div class="progress-bar {% cycle 'bg-dark' 'bg-danger' 'bg-secondary' %}" 
+                                 role="progressbar" 
+                                 style="width: {% widthratio cat.count total_open|add:resolved_count 100 %}%;">
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <p class="text-muted text-center py-4">No ticket categories recorded yet.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Recurring Hotspot Rooms -->
+    <div class="col-lg-6">
+        <div class="card h-100">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span><i class="bi bi-geo-alt-fill text-danger me-2"></i>Rooms with Most Recurring Issues</span>
+                <span class="badge badge-rwb-alert">Hotspots</span>
+            </div>
+            <div class="card-body p-0">
+                {% if recurring_rooms %}
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light small">
+                            <tr>
+                                <th>Room</th>
+                                <th>Status</th>
+                                <th>Building</th>
+                                <th class="text-end">Total Issues</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for room in recurring_rooms %}
+                            <tr>
+                                <td>
+                                    <a href="{% url 'facilities:room_detail' room.id %}" class="fw-semibold text-decoration-none">
+                                        {{ room.building_code }} {{ room.room_number }}
+                                    </a>
+                                </td>
+                                <td>
+                                    <span class="badge {% if room.operational_status == 'MAINTENANCE' %}bg-danger{% elif room.operational_status == 'AVAILABLE' %}bg-success{% else %}bg-secondary{% endif %}">
+                                        {{ room.get_operational_status_display }}
+                                    </span>
+                                </td>
+                                <td class="small text-muted">{{ room.building_name }}</td>
+                                <td class="text-end">
+                                    <span class="badge bg-danger rounded-pill px-2 py-1">{{ room.ticket_count }} tickets</span>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <p class="text-muted text-center py-4">No hotspot data available.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4 mb-4">
+    <!-- Technician Workload -->
+    <div class="col-lg-6">
+        <div class="card h-100">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span><i class="bi bi-person-gear text-secondary me-2"></i>Technician Workload Balance</span>
+                <span class="badge bg-light text-dark border">Active Staff</span>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light small">
+                            <tr>
+                                <th>Technician</th>
+                                <th>Department</th>
+                                <th>Active Assigned</th>
+                                <th>Completed</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for tech in technicians %}
+                            <tr>
+                                <td class="fw-medium">{{ tech.get_full_name|default:tech.username }}</td>
+                                <td class="small text-muted">{{ tech.department|default:"Facilities" }}</td>
+                                <td>
+                                    <span class="badge {% if tech.open_assigned > 3 %}badge-rwb-alert{% elif tech.open_assigned > 0 %}badge-rwb-ticket{% else %}badge-rwb-notice{% endif %}">
+                                        {{ tech.open_assigned }} open
+                                    </span>
+                                </td>
+                                <td>
+                                    <span class="badge badge-rwb-ticket">
+                                        {{ tech.total_resolved }}
+                                    </span>
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr><td colspan="4" class="text-center py-3 text-muted">No technicians registered.</td></tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Triage Needed -->
+    <div class="col-lg-6">
+        <div class="card h-100">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span><i class="bi bi-bell-fill text-danger me-2"></i>New Requests Awaiting Triage</span>
+                <a href="{% url 'tickets:ticket_list' %}?status=SUBMITTED" class="small text-dark fw-medium">View all</a>
+            </div>
+            <div class="card-body p-0">
+                {% if triaged_needed %}
+                <div class="list-group list-group-flush">
+                    {% for ticket in triaged_needed %}
+                    <a href="{% url 'tickets:ticket_detail' ticket.ticket_code %}" class="list-group-item list-group-item-action p-3">
+                        <div class="d-flex justify-content-between align-items-start mb-1">
+                            <span class="fw-semibold text-dark">#{{ ticket.ticket_code }} - {{ ticket.title }}</span>
+                            <span class="badge badge-priority-{{ ticket.priority }}">{{ ticket.get_priority_display }}</span>
+                        </div>
+                        <div class="small text-muted d-flex gap-3">
+                            <span><i class="bi bi-geo-alt me-1"></i>{{ ticket.room.building_code }} {{ ticket.room.room_number }}</span>
+                            <span><i class="bi bi-person me-1"></i>{{ ticket.reported_by.username }}</span>
+                            <span><i class="bi bi-clock me-1"></i>{{ ticket.created_at|timesince }} ago</span>
+                        </div>
+                    </a>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="text-center py-4 text-muted">
+                    <i class="bi bi-check-circle fs-3 text-success d-block mb-2"></i>
+                    All submitted tickets have been triaged!
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+
+<!-- ================= STUDENT WORKFLOW DASHBOARD ================= -->
+{% if user.is_student %}
+<!-- Academic KPI Cards -->
+<div class="row g-3 mb-4">
+    <div class="col-md-4">
+        <div class="card kpi-card {% if is_low_attendance %}critical{% else %}success{% endif %} p-3">
+            <div class="d-flex justify-content-between align-items-start">
+                <div>
+                    <div class="text-muted small text-uppercase fw-semibold">Aggregate Attendance</div>
+                    <div class="fs-2 fw-bold {% if is_low_attendance %}text-danger{% else %}text-dark{% endif %} mt-1">
+                        {{ overall_attendance }}%
+                    </div>
+                </div>
+                <div class="kpi-icon-box">
+                    <i class="bi bi-ui-checks"></i>
+                </div>
+            </div>
+            <div class="small mt-2">
+                <a href="{% url 'academics:attendance_dashboard' %}" class="{% if is_low_attendance %}text-danger fw-semibold{% else %}text-dark fw-medium{% endif %}">
+                    {% if is_low_attendance %}Alert: Low Attendance (&lt;75% threshold){% else %}Good Standing &rarr; View subject breakdown{% endif %}
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="card kpi-card warning p-3">
+            <div class="d-flex justify-content-between align-items-start">
+                <div>
+                    <div class="text-muted small text-uppercase fw-semibold">Fee Dues</div>
+                    <div class="fs-2 fw-bold text-dark mt-1">${{ pending_fee_sum }}</div>
+                </div>
+                <div class="kpi-icon-box">
+                    <i class="bi bi-wallet2"></i>
+                </div>
+            </div>
+            <div class="small text-muted mt-2">
+                <a href="{% url 'notices:fee_tracker' %}" class="text-dark fw-medium">
+                    View fee schedule & receipts &rarr;
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="card kpi-card info p-3">
+            <div class="d-flex justify-content-between align-items-start">
+                <div>
+                    <div class="text-muted small text-uppercase fw-semibold">My Maintenance Reports</div>
+                    <div class="fs-2 fw-bold text-dark mt-1">{{ my_open_count }} <span class="fs-6 text-muted fw-normal">active</span></div>
+                </div>
+                <div class="kpi-icon-box">
+                    <i class="bi bi-tools"></i>
+                </div>
+            </div>
+            <div class="small text-muted mt-2">
+                <a href="{% url 'tickets:ticket_list' %}?scope=my" class="text-dark fw-medium">
+                    Track reported faults &rarr;
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4 mb-4">
+    <!-- Today's Classes -->
+    <div class="col-lg-7">
+        <div class="card h-100 shadow-sm border">
+            <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+                <h5 class="fw-bold mb-0 text-dark"><i class="bi bi-calendar-day text-primary me-2"></i>Today's Class Schedule</h5>
+                <a href="{% url 'academics:timetable' %}" class="small text-decoration-none">Full Timetable &rarr;</a>
+            </div>
+            <div class="card-body p-0">
+                {% if today_slots %}
+                <div class="list-group list-group-flush">
+                    {% for slot in today_slots %}
+                    <div class="list-group-item p-3">
+                        <div class="d-flex justify-content-between align-items-start mb-1">
+                            <div>
+                                <span class="badge bg-dark me-1">P{{ slot.period_number }}</span>
+                                <span class="fw-bold text-dark">{{ slot.subject_code }}</span>
+                                <span class="text-secondary small">- {{ slot.subject_name }}</span>
+                            </div>
+                            <span class="badge {% if slot.status == 'REGULAR' %}badge-rwb-ticket{% elif slot.status == 'CANCELLED' %}badge-rwb-alert{% else %}badge-rwb-alert{% endif %}">
+                                {{ slot.get_status_display }}
+                            </span>
+                        </div>
+                        <div class="small text-muted d-flex gap-3">
+                            <span><i class="bi bi-clock me-1"></i>{{ slot.start_time|time:"H:i" }} - {{ slot.end_time|time:"H:i" }}</span>
+                            <span><i class="bi bi-geo-alt me-1"></i>Room {{ slot.room.building_code }} {{ slot.room.room_number }}</span>
+                            <span><i class="bi bi-person me-1"></i>{% if slot.faculty %}{{ slot.faculty.get_full_name|default:slot.faculty.username }}{% else %}TBA{% endif %}</span>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="text-center py-5 text-muted small">
+                    <i class="bi bi-calendar-check fs-2 d-block mb-2 text-dark"></i>
+                    No classes scheduled for today!
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Upcoming Exams & Notices -->
+    <div class="col-lg-5">
+        <div class="card h-100 shadow-sm border">
+            <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+                <h5 class="fw-bold mb-0 text-dark"><i class="bi bi-mortarboard text-secondary me-2"></i>Upcoming Exams</h5>
+                <a href="{% url 'academics:exam_list' %}" class="small text-decoration-none text-dark">All Exams</a>
+            </div>
+            <div class="card-body p-0">
+                {% if upcoming_exams %}
+                <div class="list-group list-group-flush">
+                    {% for ex in upcoming_exams %}
+                    <div class="list-group-item p-3">
+                        <div class="d-flex justify-content-between align-items-start mb-1">
+                            <span class="fw-bold text-dark">{{ ex.subject_code }} - {{ ex.exam_name }}</span>
+                            <span class="small text-muted">{{ ex.exam_date|date:"M d" }}</span>
+                        </div>
+                        <div class="small text-muted d-flex justify-content-between align-items-center">
+                            <span><i class="bi bi-geo-alt me-1"></i>Hall: {{ ex.room.building_code }} {{ ex.room.room_number }}</span>
+                            {% if ex.has_room_critical_issues %}
+                            <span class="badge badge-rwb-alert">Fault Reported</span>
+                            {% elif ex.room_readiness_checked %}
+                            <span class="badge badge-rwb-notice">Hall Ready</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="text-center py-5 text-muted small">
+                    No upcoming exams scheduled.
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+
+<!-- ================= FACULTY WORKFLOW DASHBOARD ================= -->
+{% if user.is_faculty %}
+<div class="row g-4 mb-4">
+    <!-- Today's Teaching Sessions -->
+    <div class="col-lg-7">
+        <div class="card h-100 shadow-sm border">
+            <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+                <h5 class="fw-bold mb-0 text-dark"><i class="bi bi-calendar-check text-primary me-2"></i>My Classes Today ({{ today_code }})</h5>
+                <a href="{% url 'academics:timetable' %}" class="small text-decoration-none">Full Timetable</a>
+            </div>
+            <div class="card-body p-0">
+                {% if my_today_slots %}
+                <div class="list-group list-group-flush">
+                    {% for slot in my_today_slots %}
+                    <div class="list-group-item p-3">
+                        <div class="d-flex justify-content-between align-items-start mb-1">
+                            <div>
+                                <span class="badge bg-dark me-1">P{{ slot.period_number }}</span>
+                                <span class="fw-bold text-dark">{{ slot.subject_code }}</span>
+                                <span class="text-secondary small">({{ slot.section }})</span>
+                            </div>
+                            <span class="badge bg-light text-dark border">{{ slot.room.building_code }} {{ slot.room.room_number }}</span>
+                        </div>
+                        <div class="small text-muted mb-2">
+                            {{ slot.start_time|time:"H:i" }} - {{ slot.end_time|time:"H:i" }} &bull; {{ slot.subject_name }}
+                        </div>
+                        <div class="d-flex gap-2">
+                            <a href="{% url 'academics:attendance_mark' %}?slot={{ slot.id }}" class="btn btn-xs btn-outline-primary">
+                                <i class="bi bi-check2-square me-1"></i> Mark Attendance
+                            </a>
+                            <a href="{% url 'academics:activity_log_create' %}?slot={{ slot.id }}" class="btn btn-xs btn-outline-success">
+                                <i class="bi bi-pencil-square me-1"></i> Log Activity
+                            </a>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="text-center py-5 text-muted small">
+                    <i class="bi bi-calendar-x fs-2 d-block mb-2 text-muted"></i>
+                    No teaching periods scheduled for you today.
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Invigilation & Activity Logs -->
+    <div class="col-lg-5">
+        <div class="card h-100 shadow-sm border">
+            <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+                <h5 class="fw-bold mb-0 text-dark"><i class="bi bi-mortarboard text-secondary me-2"></i>My Exam Invigilation</h5>
+                <a href="{% url 'academics:exam_list' %}" class="small text-decoration-none">View All</a>
+            </div>
+            <div class="card-body p-0">
+                {% if my_exams %}
+                <div class="list-group list-group-flush">
+                    {% for ex in my_exams %}
+                    <div class="list-group-item p-3">
+                        <div class="d-flex justify-content-between align-items-start mb-1">
+                            <span class="fw-bold text-dark">{{ ex.exam_name }} ({{ ex.subject_code }})</span>
+                            <span class="small text-muted">{{ ex.exam_date|date:"M d" }}</span>
+                        </div>
+                        <div class="small text-muted d-flex justify-content-between align-items-center mt-2">
+                            <span><i class="bi bi-geo-alt me-1"></i>Hall: {{ ex.room.building_code }} {{ ex.room.room_number }}</span>
+                            <form method="post" action="{% url 'academics:exam_toggle_readiness' ex.id %}" class="d-inline">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-xs {% if ex.room_readiness_checked %}btn-success{% else %}btn-outline-warning text-dark{% endif %}">
+                                    {% if ex.room_readiness_checked %}&#10003; Hall Ready{% else %}Verify Hall{% endif %}
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="text-center py-5 text-muted small">
+                    No invigilation sessions assigned.
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+
+<!-- ================= TECHNICIAN WORKFLOW DASHBOARD ================= -->
+{% if user.is_technician %}
+<div class="row g-3 mb-4">
+    <div class="col-md-4">
+        <div class="card kpi-card warning p-3">
+            <div class="text-muted small text-uppercase fw-semibold">Assigned To Me (Open)</div>
+            <div class="fs-2 fw-bold text-dark mt-1">{{ assigned_open_count }}</div>
+            <div class="small text-muted mt-1">Active repair backlog</div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card kpi-card info p-3">
+            <div class="text-muted small text-uppercase fw-semibold">Currently In Progress</div>
+            <div class="fs-2 fw-bold text-primary mt-1">{{ in_progress_count }}</div>
+            <div class="small text-muted mt-1">Hands-on active work</div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card kpi-card success p-3">
+            <div class="text-muted small text-uppercase fw-semibold">Resolved By Me</div>
+            <div class="fs-2 fw-bold text-success mt-1">{{ resolved_by_me_count }}</div>
+            <div class="small text-muted mt-1">Successfully resolved issues</div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4 mb-4">
+    <!-- My Assigned Queue -->
+    <div class="col-lg-7">
+        <div class="card h-100">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span><i class="bi bi-wrench-adjustable text-danger me-2"></i>My Assigned Repair Queue</span>
+                <a href="{% url 'tickets:ticket_list' %}?scope=assigned" class="small text-dark fw-medium">Filter Queue</a>
+            </div>
+            <div class="card-body p-0">
+                {% if my_assigned_tickets %}
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light small">
+                            <tr>
+                                <th>Ticket</th>
+                                <th>Location</th>
+                                <th>Priority</th>
+                                <th>Status</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for ticket in my_assigned_tickets %}
+                            <tr>
+                                <td>
+                                    <a href="{% url 'tickets:ticket_detail' ticket.ticket_code %}" class="fw-semibold text-decoration-none d-block">
+                                        #{{ ticket.ticket_code }}
+                                    </a>
+                                    <span class="small text-muted text-truncate d-inline-block" style="max-width: 180px;">{{ ticket.title }}</span>
+                                </td>
+                                <td class="small">{{ ticket.room.building_code }} {{ ticket.room.room_number }}</td>
+                                <td><span class="badge badge-priority-{{ ticket.priority }}">{{ ticket.get_priority_display }}</span></td>
+                                <td><span class="badge badge-status-{{ ticket.status }}">{{ ticket.get_status_display }}</span></td>
+                                <td>
+                                    <a href="{% url 'tickets:ticket_detail' ticket.ticket_code %}" class="btn btn-sm btn-outline-primary">
+                                        Update
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="text-center py-4 text-muted">
+                    <i class="bi bi-check-circle fs-3 text-dark d-block mb-2"></i>
+                    No open tickets assigned to you right now. Great job!
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Unassigned Open Pool -->
+    <div class="col-lg-5">
+        <div class="card h-100">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span><i class="bi bi-box-arrow-in-down text-dark me-2"></i>Unassigned Open Pool</span>
+                <span class="badge bg-secondary">Available</span>
+            </div>
+            <div class="card-body p-0">
+                {% if unassigned_pool %}
+                <div class="list-group list-group-flush">
+                    {% for ticket in unassigned_pool %}
+                    <div class="list-group-item p-3">
+                        <div class="d-flex justify-content-between align-items-start mb-1">
+                            <a href="{% url 'tickets:ticket_detail' ticket.ticket_code %}" class="fw-semibold text-decoration-none">
+                                #{{ ticket.ticket_code }} - {{ ticket.title }}
+                            </a>
+                            <span class="badge badge-priority-{{ ticket.priority }}">{{ ticket.get_priority_display }}</span>
+                        </div>
+                        <div class="small text-muted d-flex justify-content-between align-items-center mt-2">
+                            <span><i class="bi bi-geo-alt me-1"></i>{{ ticket.room.building_code }} {{ ticket.room.room_number }}</span>
+                            <a href="{% url 'tickets:ticket_detail' ticket.ticket_code %}" class="btn btn-xs btn-outline-success">
+                                View & Claim &rarr;
+                            </a>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="text-center py-4 text-muted">
+                    No unassigned tickets pending in the pool.
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+{% endblock %}

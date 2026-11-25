@@ -1,0 +1,102 @@
+{% extends 'base.html' %}
+
+{% block title %}Teacher Activity Logs - CampusCare{% endblock %}
+
+{% block content %}
+<div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
+    <div>
+        <h3 class="fw-bold mb-1"><i class="bi bi-journal-text text-primary me-2"></i>Teacher Class Activity Logs</h3>
+        <p class="text-muted small mb-0">Daily conducted lectures, lab sessions, and classroom operational coverage.</p>
+    </div>
+    {% if user.is_faculty or user.is_manager %}
+    <a href="{% url 'academics:activity_log_create' %}" class="btn btn-primary">
+        <i class="bi bi-pencil-square me-1"></i> Log Today's Class Activity
+    </a>
+    {% endif %}
+</div>
+
+<!-- Filter Bar -->
+<div class="card mb-4 shadow-sm">
+    <div class="card-body p-3">
+        <form method="get" class="row g-2 align-items-center">
+            <div class="col-md-4">
+                <div class="input-group">
+                    <span class="input-group-text bg-white"><i class="bi bi-calendar"></i></span>
+                    <input type="date" name="date" value="{{ date_filter }}" class="form-control">
+                </div>
+            </div>
+            <div class="col-md-2 d-flex gap-2">
+                <button type="submit" class="btn btn-primary w-100">Filter Date</button>
+                {% if date_filter %}
+                <a href="{% url 'academics:activity_log_list' %}" class="btn btn-outline-secondary"><i
+                        class="bi bi-x"></i></a>
+                {% endif %}
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="card shadow-sm border-0">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light small">
+                    <tr>
+                        <th>Date</th>
+                        <th>Faculty</th>
+                        <th>Subject / Slot</th>
+                        <th>Room</th>
+                        <th>Session Status</th>
+                        <th>Topic Covered</th>
+                        <th>Remarks</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for log in logs %}
+                    <tr>
+                        <td class="fw-semibold text-dark">{{ log.date|date:"M d, Y" }}</td>
+                        <td>
+                            <div class="fw-medium">{{ log.faculty.get_full_name|default:log.faculty.username }}</div>
+                            <div class="small text-muted">{{ log.faculty.department }}</div>
+                        </td>
+                        <td>
+                            {% if log.timetable_slot %}
+                            <span class="badge bg-dark">{{ log.timetable_slot.subject_code }}</span>
+                            <div class="small text-muted">{{ log.timetable_slot.subject_name }}</div>
+                            {% else %}
+                            <span class="badge bg-secondary">Ad-hoc Session</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <a href="{% url 'facilities:room_detail' log.room.id %}"
+                                class="text-decoration-none fw-medium text-dark">
+                                {{ log.room.building_code }} {{ log.room.room_number }}
+                            </a>
+                        </td>
+                        <td>
+                            <span
+                                class="badge {% if log.session_status == 'CONDUCTED' %}badge-rwb-notice{% elif log.session_status == 'CANCELLED' %}badge-rwb-alert{% else %}badge-rwb-ticket{% endif %}">
+                                {{ log.get_session_status_display }}
+                            </span>
+                        </td>
+                        <td class="small" style="max-width: 250px;">
+                            {{ log.topic_covered|linebreaksbr }}
+                        </td>
+                        <td class="small text-muted" style="max-width: 180px;">
+                            {{ log.remarks|default:"-" }}
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="7" class="text-center py-5 text-muted">
+                            <i class="bi bi-journal-x fs-2 d-block mb-2"></i>
+                            No teacher activity logs found for the selected criteria.
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
